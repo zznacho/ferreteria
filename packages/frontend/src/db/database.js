@@ -67,7 +67,7 @@ class LocalDatabase {
     return this.db.exec(sql, params);
   }
 
-  query(sql, params = [) {
+  query(sql, params = []) {
     const stmt = this.db.prepare(sql);
     stmt.bind(params);
     
