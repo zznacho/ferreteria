@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 function Products() {
   const [products, setProducts] = useState([]);
@@ -6,11 +6,14 @@ function Products() {
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('name'); // name, price-asc, price-desc, stock-asc, stock-desc
+  const [sortBy, setSortBy] = useState('name');
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
-    stock: ''
+    stock: '',
+    image: null // Base64 de la imagen
   });
 
   useEffect(() => {
@@ -60,6 +63,31 @@ function Products() {
     setFilteredProducts(filtered);
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+  alert('La imagen no debe superar los 5MB');
+  return;
+}
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({...formData, image: reader.result});
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({...formData, image: null});
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
@@ -68,6 +96,7 @@ function Products() {
       name: formData.name,
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock),
+      image: formData.image || null,
       updated_at: new Date().toISOString()
     };
 
@@ -84,7 +113,8 @@ function Products() {
     setProducts(updatedProducts);
     setShowForm(false);
     setEditingProduct(null);
-    setFormData({ name: '', price: '', stock: '' });
+    setImagePreview(null);
+    setFormData({ name: '', price: '', stock: '', image: null });
   };
 
   const handleDelete = (id) => {
@@ -100,14 +130,33 @@ function Products() {
     setFormData({
       name: product.name,
       price: product.price,
-      stock: product.stock
+      stock: product.stock,
+      image: product.image || null
     });
+    setImagePreview(product.image || null);
     setShowForm(true);
   };
 
   const clearSearch = () => {
     setSearchTerm('');
   };
+
+  // Componente de imagen por defecto
+  const DefaultProductImage = () => (
+    <div style={{
+      width: '60px',
+      height: '60px',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      borderRadius: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'white',
+      fontSize: '24px'
+    }}>
+      📦
+    </div>
+  );
 
   return (
     <div style={{ padding: '20px' }}>
@@ -121,7 +170,8 @@ function Products() {
         <button
           onClick={() => {
             setEditingProduct(null);
-            setFormData({ name: '', price: '', stock: '' });
+            setFormData({ name: '', price: '', stock: '', image: null });
+            setImagePreview(null);
             setShowForm(true);
           }}
           style={{
@@ -153,7 +203,6 @@ function Products() {
           gap: '20px',
           alignItems: 'center'
         }}>
-          {/* Búsqueda */}
           <div style={{ position: 'relative' }}>
             <input
               type="text"
@@ -189,7 +238,6 @@ function Products() {
             )}
           </div>
 
-          {/* Ordenamiento */}
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <label style={{ color: '#666', fontWeight: 'bold' }}>Ordenar por:</label>
             <select
@@ -213,7 +261,6 @@ function Products() {
           </div>
         </div>
 
-        {/* Resultados de búsqueda */}
         {searchTerm && (
           <div style={{ 
             marginTop: '15px', 
@@ -239,67 +286,148 @@ function Products() {
             {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
           </h2>
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', color: '#666' }}>
-                Nombre
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                style={{
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px', gap: '20px' }}>
+              <div>
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: '#666' }}>
+                    Nombre *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '5px',
+                      fontSize: '16px'
+                    }}
+                    required
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: '#666' }}>
+                    Precio *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.price}
+                    onChange={(e) => setFormData({...formData, price: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '5px',
+                      fontSize: '16px'
+                    }}
+                    required
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: '#666' }}>
+                    Stock *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.stock}
+                    onChange={(e) => setFormData({...formData, stock: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '5px',
+                      fontSize: '16px'
+                    }}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', color: '#666' }}>
+                  Imagen (opcional)
+                </label>
+                
+                <div style={{
                   width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '5px',
-                  fontSize: '16px'
-                }}
-                required
-              />
+                  height: '200px',
+                  border: '2px dashed #ddd',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  background: '#fafafa'
+                }}>
+                  {imagePreview ? (
+                    <>
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        style={{
+                          position: 'absolute',
+                          top: '5px',
+                          right: '5px',
+                          background: '#f5576c',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '30px',
+                          height: '30px',
+                          cursor: 'pointer',
+                          fontSize: '16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: '48px', marginBottom: '10px' }}>📸</div>
+                      <p style={{ color: '#999', marginBottom: '10px' }}>
+                        Sin imagen
+                      </p>
+                    </>
+                  )}
+                </div>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  style={{
+                    marginTop: '10px',
+                    width: '100%'
+                  }}
+                />
+                <small style={{ color: '#999', display: 'block', marginTop: '5px' }}>
+                  Formatos: JPG, PNG, GIF, WebP. Máx 5MB
+                </small>
+              </div>
             </div>
             
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', color: '#666' }}>
-                Precio
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '5px',
-                  fontSize: '16px'
-                }}
-                required
-              />
-            </div>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', color: '#666' }}>
-                Stock
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={formData.stock}
-                onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '5px',
-                  fontSize: '16px'
-                }}
-                required
-              />
-            </div>
-            
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
               <button
                 type="submit"
                 style={{
@@ -319,6 +447,7 @@ function Products() {
                 onClick={() => {
                   setShowForm(false);
                   setEditingProduct(null);
+                  setImagePreview(null);
                 }}
                 style={{
                   padding: '12px 24px',
@@ -346,6 +475,7 @@ function Products() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#f5f5f5', borderBottom: '2px solid #ddd' }}>
+              <th style={{ padding: '15px', textAlign: 'left', width: '80px' }}>Imagen</th>
               <th style={{ padding: '15px', textAlign: 'left' }}>Producto</th>
               <th style={{ padding: '15px', textAlign: 'right' }}>Precio</th>
               <th style={{ padding: '15px', textAlign: 'right' }}>Stock</th>
@@ -355,13 +485,29 @@ function Products() {
           <tbody>
             {filteredProducts.length === 0 ? (
               <tr>
-                <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
+                <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
                   {searchTerm ? 'No se encontraron productos con ese nombre' : 'No hay productos. ¡Crea uno nuevo!'}
                 </td>
               </tr>
             ) : (
               filteredProducts.map(product => (
                 <tr key={product.id} style={{ borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: '10px' }}>
+                    {product.image ? (
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        style={{
+                          width: '60px',
+                          height: '60px',
+                          objectFit: 'cover',
+                          borderRadius: '8px'
+                        }}
+                      />
+                    ) : (
+                      <DefaultProductImage />
+                    )}
+                  </td>
                   <td style={{ padding: '15px' }}>
                     <strong>{product.name}</strong>
                   </td>
@@ -444,9 +590,9 @@ function Products() {
             </strong>
           </div>
           <div>
-            <span style={{ color: '#666' }}>Productos sin stock: </span>
-            <strong style={{ color: '#f5576c' }}>
-              {filteredProducts.filter(p => p.stock === 0).length}
+            <span style={{ color: '#666' }}>Productos con imagen: </span>
+            <strong style={{ color: '#4caf50' }}>
+              {filteredProducts.filter(p => p.image).length}
             </strong>
           </div>
         </div>

@@ -46,7 +46,8 @@ function NewSale() {
         id: product.id,
         name: product.name,
         price: product.price,
-        quantity: quantity
+        quantity: quantity,
+        image: product.image
       }]);
     }
 
@@ -83,7 +84,6 @@ function NewSale() {
       return;
     }
 
-    // Actualizar stock
     const updatedProducts = products.map(product => {
       const cartItem = cart.find(item => item.id === product.id);
       if (cartItem) {
@@ -92,7 +92,6 @@ function NewSale() {
       return product;
     });
 
-    // Guardar venta
     const sale = {
       id: Date.now(),
       date: new Date().toISOString(),
@@ -102,11 +101,52 @@ function NewSale() {
 
     const sales = JSON.parse(localStorage.getItem('sales') || '[]');
     sales.push(sale);
+    
+    // Actualizar también los productos que no están en la venta
+    const allProducts = JSON.parse(localStorage.getItem('products') || '[]');
+    const updatedAllProducts = allProducts.map(product => {
+      const updated = updatedProducts.find(p => p.id === product.id);
+      return updated || product;
+    });
+    
     localStorage.setItem('sales', JSON.stringify(sales));
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    localStorage.setItem('products', JSON.stringify(updatedAllProducts));
 
     alert(`✅ Venta completada! Total: $${sale.total.toFixed(2)}`);
     navigate('/sales');
+  };
+
+  // Componente de imagen por defecto
+  const ProductImage = ({ product }) => {
+    if (product.image) {
+      return (
+        <img 
+          src={product.image} 
+          alt={product.name}
+          style={{
+            width: '50px',
+            height: '50px',
+            objectFit: 'cover',
+            borderRadius: '5px'
+          }}
+        />
+      );
+    }
+    return (
+      <div style={{
+        width: '50px',
+        height: '50px',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '5px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '20px'
+      }}>
+        📦
+      </div>
+    );
   };
 
   return (
@@ -194,6 +234,7 @@ function NewSale() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid #ddd' }}>
+                    <th style={{ padding: '10px', textAlign: 'left' }}></th>
                     <th style={{ padding: '10px', textAlign: 'left' }}>Producto</th>
                     <th style={{ padding: '10px', textAlign: 'right' }}>Precio</th>
                     <th style={{ padding: '10px', textAlign: 'center' }}>Stock</th>
@@ -202,6 +243,9 @@ function NewSale() {
                 <tbody>
                   {filteredProducts.map(product => (
                     <tr key={product.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{ padding: '10px' }}>
+                        <ProductImage product={product} />
+                      </td>
                       <td style={{ padding: '10px' }}>{product.name}</td>
                       <td style={{ padding: '10px', textAlign: 'right' }}>
                         ${product.price.toFixed(2)}
@@ -244,20 +288,21 @@ function NewSale() {
                       padding: '10px',
                       borderBottom: '1px solid #eee',
                       display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      gap: '10px'
                     }}>
+                      <ProductImage product={item} />
                       <div style={{ flex: 1 }}>
                         <strong>{item.name}</strong>
                         <br />
                         <small style={{ color: '#666' }}>${item.price.toFixed(2)} c/u</small>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                         <button
                           onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                           style={{
-                            width: '30px',
-                            height: '30px',
+                            width: '25px',
+                            height: '25px',
                             background: '#f0f0f0',
                             border: 'none',
                             borderRadius: '3px',
@@ -266,14 +311,14 @@ function NewSale() {
                         >
                           -
                         </button>
-                        <span style={{ minWidth: '30px', textAlign: 'center' }}>
+                        <span style={{ minWidth: '25px', textAlign: 'center' }}>
                           {item.quantity}
                         </span>
                         <button
                           onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                           style={{
-                            width: '30px',
-                            height: '30px',
+                            width: '25px',
+                            height: '25px',
                             background: '#f0f0f0',
                             border: 'none',
                             borderRadius: '3px',
@@ -285,7 +330,7 @@ function NewSale() {
                         <button
                           onClick={() => handleRemoveFromCart(item.id)}
                           style={{
-                            marginLeft: '10px',
+                            marginLeft: '5px',
                             padding: '5px 10px',
                             background: '#f5576c',
                             color: 'white',
