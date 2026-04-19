@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 
 function Products() {
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('name'); // name, price-asc, price-desc, stock-asc, stock-desc
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -14,9 +17,47 @@ function Products() {
     loadProducts();
   }, []);
 
+  useEffect(() => {
+    filterAndSortProducts();
+  }, [products, searchTerm, sortBy]);
+
   const loadProducts = () => {
     const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
     setProducts(savedProducts);
+  };
+
+  const filterAndSortProducts = () => {
+    let filtered = [...products];
+
+    // Filtrar por nombre
+    if (searchTerm) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Ordenar
+    switch (sortBy) {
+      case 'name':
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'price-asc':
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-desc':
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case 'stock-asc':
+        filtered.sort((a, b) => a.stock - b.stock);
+        break;
+      case 'stock-desc':
+        filtered.sort((a, b) => b.stock - a.stock);
+        break;
+      default:
+        break;
+    }
+
+    setFilteredProducts(filtered);
   };
 
   const handleSubmit = (e) => {
@@ -40,7 +81,7 @@ function Products() {
     }
 
     localStorage.setItem('products', JSON.stringify(updatedProducts));
-    loadProducts();
+    setProducts(updatedProducts);
     setShowForm(false);
     setEditingProduct(null);
     setFormData({ name: '', price: '', stock: '' });
@@ -50,7 +91,7 @@ function Products() {
     if (window.confirm('¿Estás seguro de eliminar este producto?')) {
       const updatedProducts = products.filter(p => p.id !== id);
       localStorage.setItem('products', JSON.stringify(updatedProducts));
-      loadProducts();
+      setProducts(updatedProducts);
     }
   };
 
@@ -62,6 +103,10 @@ function Products() {
       stock: product.stock
     });
     setShowForm(true);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
   };
 
   return (
@@ -92,6 +137,94 @@ function Products() {
         >
           + Nuevo Producto
         </button>
+      </div>
+
+      {/* Barra de búsqueda y ordenamiento */}
+      <div style={{
+        background: 'white',
+        padding: '20px',
+        borderRadius: '10px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr auto', 
+          gap: '20px',
+          alignItems: 'center'
+        }}>
+          {/* Búsqueda */}
+          <div style={{ position: 'relative' }}>
+            <input
+              type="text"
+              placeholder="🔍 Buscar producto por nombre..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 40px 12px 12px',
+                border: '1px solid #ddd',
+                borderRadius: '5px',
+                fontSize: '16px',
+                boxSizing: 'border-box'
+              }}
+            />
+            {searchTerm && (
+              <button
+                onClick={clearSearch}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  color: '#999'
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Ordenamiento */}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <label style={{ color: '#666', fontWeight: 'bold' }}>Ordenar por:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{
+                padding: '10px',
+                border: '1px solid #ddd',
+                borderRadius: '5px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                background: 'white'
+              }}
+            >
+              <option value="name">📝 Nombre (A-Z)</option>
+              <option value="price-asc">💰 Precio (Menor a Mayor)</option>
+              <option value="price-desc">💰 Precio (Mayor a Menor)</option>
+              <option value="stock-asc">📦 Stock (Menor a Mayor)</option>
+              <option value="stock-desc">📦 Stock (Mayor a Menor)</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Resultados de búsqueda */}
+        {searchTerm && (
+          <div style={{ 
+            marginTop: '15px', 
+            padding: '10px', 
+            background: '#f0f0f0',
+            borderRadius: '5px',
+            color: '#666'
+          }}>
+            <strong>{filteredProducts.length}</strong> producto(s) encontrado(s) para "{searchTerm}"
+          </div>
+        )}
       </div>
 
       {showForm && (
@@ -132,6 +265,7 @@ function Products() {
               <input
                 type="number"
                 step="0.01"
+                min="0"
                 value={formData.price}
                 onChange={(e) => setFormData({...formData, price: e.target.value})}
                 style={{
@@ -147,10 +281,11 @@ function Products() {
             
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '5px', color: '#666' }}>
-                Stock Inicial
+                Stock
               </label>
               <input
                 type="number"
+                min="0"
                 value={formData.stock}
                 onChange={(e) => setFormData({...formData, stock: e.target.value})}
                 style={{
@@ -218,25 +353,35 @@ function Products() {
             </tr>
           </thead>
           <tbody>
-            {products.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <tr>
                 <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
-                  No hay productos. ¡Crea uno nuevo!
+                  {searchTerm ? 'No se encontraron productos con ese nombre' : 'No hay productos. ¡Crea uno nuevo!'}
                 </td>
               </tr>
             ) : (
-              products.map(product => (
+              filteredProducts.map(product => (
                 <tr key={product.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '15px' }}>{product.name}</td>
+                  <td style={{ padding: '15px' }}>
+                    <strong>{product.name}</strong>
+                  </td>
                   <td style={{ padding: '15px', textAlign: 'right' }}>
-                    ${product.price.toFixed(2)}
+                    <span style={{ 
+                      fontWeight: 'bold',
+                      color: '#667eea'
+                    }}>
+                      ${product.price.toFixed(2)}
+                    </span>
                   </td>
                   <td style={{ padding: '15px', textAlign: 'right' }}>
                     <span style={{
-                      color: product.stock < 10 ? '#f5576c' : '#4caf50',
-                      fontWeight: 'bold'
+                      color: product.stock === 0 ? '#f5576c' : product.stock < 10 ? '#ff9800' : '#4caf50',
+                      fontWeight: 'bold',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      background: product.stock === 0 ? '#fee' : product.stock < 10 ? '#fff3e0' : '#e8f5e9'
                     }}>
-                      {product.stock}
+                      {product.stock} unidades
                     </span>
                   </td>
                   <td style={{ padding: '15px', textAlign: 'center' }}>
@@ -244,28 +389,30 @@ function Products() {
                       onClick={() => handleEdit(product)}
                       style={{
                         marginRight: '10px',
-                        padding: '5px 15px',
+                        padding: '8px 16px',
                         background: '#4facfe',
                         color: 'white',
                         border: 'none',
-                        borderRadius: '3px',
-                        cursor: 'pointer'
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '14px'
                       }}
                     >
-                      Editar
+                      ✏️ Editar
                     </button>
                     <button
                       onClick={() => handleDelete(product.id)}
                       style={{
-                        padding: '5px 15px',
+                        padding: '8px 16px',
                         background: '#f5576c',
                         color: 'white',
                         border: 'none',
-                        borderRadius: '3px',
-                        cursor: 'pointer'
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '14px'
                       }}
                     >
-                      Eliminar
+                      🗑️ Eliminar
                     </button>
                   </td>
                 </tr>
@@ -274,6 +421,36 @@ function Products() {
           </tbody>
         </table>
       </div>
+
+      {/* Estadísticas rápidas */}
+      {filteredProducts.length > 0 && (
+        <div style={{
+          marginTop: '20px',
+          padding: '15px',
+          background: 'white',
+          borderRadius: '10px',
+          display: 'flex',
+          gap: '20px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <div>
+            <span style={{ color: '#666' }}>Total productos: </span>
+            <strong>{filteredProducts.length}</strong>
+          </div>
+          <div>
+            <span style={{ color: '#666' }}>Valor total del inventario: </span>
+            <strong style={{ color: '#667eea' }}>
+              ${filteredProducts.reduce((sum, p) => sum + (p.price * p.stock), 0).toFixed(2)}
+            </strong>
+          </div>
+          <div>
+            <span style={{ color: '#666' }}>Productos sin stock: </span>
+            <strong style={{ color: '#f5576c' }}>
+              {filteredProducts.filter(p => p.stock === 0).length}
+            </strong>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

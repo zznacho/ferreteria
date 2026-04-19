@@ -104,43 +104,15 @@ function Layout({ children }) {
         background: '#f5f5f5',
         minHeight: '100vh'
       }}>
-        {/* Header */}
+        {/* Header simplificado sin botones */}
         <div style={{
           background: 'white',
           padding: '15px 30px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           alignItems: 'center'
         }}>
-          <div>
-            <button
-              onClick={() => navigate(-1)}
-              style={{
-                padding: '8px 16px',
-                background: '#f0f0f0',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                marginRight: '10px'
-              }}
-            >
-              ← Volver
-            </button>
-            <button
-              onClick={() => navigate('/dashboard')}
-              style={{
-                padding: '8px 16px',
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer'
-              }}
-            >
-              🏠 Inicio
-            </button>
-          </div>
           <div style={{ color: '#666' }}>
             {new Date().toLocaleDateString('es-ES', { 
               weekday: 'long', 
