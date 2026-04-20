@@ -13,120 +13,275 @@ function Layout({ children }) {
   };
 
   const menuItems = [
-    { path: '/dashboard', label: '📊 Dashboard', icon: '📊' },
-    { path: '/products', label: '📦 Productos', icon: '📦' },
-    { path: '/sales', label: '💰 Historial Ventas', icon: '💰' },
-    { path: '/sales/new', label: '🛒 Nueva Venta', icon: '🛒' },
+    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/products', label: 'Productos', icon: '📦' },
+    { path: '/sales', label: 'Historial Ventas', icon: '📈' },
+    { path: '/sales/new', label: 'Nueva Venta', icon: '💰' },
   ];
 
+  // Paleta de colores
+  const colors = {
+    primary: '#263B6A',
+    secondary: '#6984A9',
+    accent: '#A0D585',
+    light: '#EEFABD',
+    white: '#FFFFFF',
+    gray: '#F3F4F6'
+  };
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: colors.gray }}>
       {/* Sidebar */}
       <div style={{
-        width: '250px',
-        background: 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        padding: '20px 0',
+        width: '280px',
+        background: colors.primary,
+        color: colors.white,
         position: 'fixed',
         height: '100vh',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        boxShadow: '2px 0 8px rgba(0,0,0,0.05)'
       }}>
-        <div style={{ padding: '0 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
-          <h2 style={{ margin: 0, fontSize: '20px' }}>🏪 Ferretería</h2>
-          <p style={{ margin: '5px 0 0', opacity: 0.8, fontSize: '14px' }}>
-            {user.username} ({user.role})
+        {/* Logo */}
+        <div style={{ 
+          padding: '28px 24px', 
+          borderBottom: `1px solid ${colors.secondary}40`
+        }}>
+          <h1 style={{ 
+            margin: 0, 
+            fontSize: '24px', 
+            fontWeight: '700',
+            color: colors.light,
+            letterSpacing: '0.5px'
+          }}>
+            Ferretería Pro
+          </h1>
+          <p style={{ 
+            margin: '4px 0 0', 
+            fontSize: '11px', 
+            color: colors.accent,
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            opacity: 0.9
+          }}>
+            SISTEMA DE GESTIÓN
           </p>
         </div>
 
-        <nav style={{ padding: '20px 0' }}>
-          {menuItems.map(item => (
+        {/* Usuario */}
+        <div style={{
+          padding: '20px 24px',
+          borderBottom: `1px solid ${colors.secondary}40`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              background: colors.accent,
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: colors.primary,
+              fontWeight: 'bold',
+              fontSize: '18px'
+            }}>
+              {user.username?.[0]?.toUpperCase() || 'A'}
+            </div>
+            <div>
+              <p style={{ 
+                margin: 0, 
+                fontSize: '15px', 
+                fontWeight: '600',
+                color: colors.white
+              }}>
+                {user.username}
+              </p>
+              <p style={{ 
+                margin: '2px 0 0', 
+                fontSize: '11px', 
+                color: colors.accent,
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+              }}>
+                {user.role || 'ADMIN'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Menú */}
+        <nav style={{ padding: '20px 16px' }}>
+          <p style={{ 
+            padding: '0 8px', 
+            margin: '0 0 16px', 
+            fontSize: '11px', 
+            color: colors.secondary,
+            textTransform: 'uppercase',
+            letterSpacing: '1.5px',
+            fontWeight: '600'
+          }}>
+            MENÚ PRINCIPAL
+          </p>
+          
+          {menuItems.map((item, index) => (
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
               style={{
                 width: '100%',
-                padding: '12px 20px',
-                background: location.pathname === item.path ? 'rgba(255,255,255,0.2)' : 'transparent',
+                padding: '14px 16px',
+                marginBottom: '6px',
+                background: location.pathname === item.path 
+                  ? colors.accent 
+                  : 'transparent',
                 border: 'none',
-                color: 'white',
+                color: location.pathname === item.path ? colors.primary : `${colors.white}cc`,
                 textAlign: 'left',
-                fontSize: '16px',
+                fontSize: '15px',
+                fontWeight: location.pathname === item.path ? '600' : '400',
                 cursor: 'pointer',
-                transition: 'background 0.3s',
-                borderLeft: location.pathname === item.path ? '4px solid white' : '4px solid transparent'
+                borderRadius: '10px',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
               }}
               onMouseEnter={(e) => {
                 if (location.pathname !== item.path) {
-                  e.target.style.background = 'rgba(255,255,255,0.1)';
+                  e.target.style.background = `${colors.secondary}40`;
+                  e.target.style.color = colors.white;
                 }
               }}
               onMouseLeave={(e) => {
                 if (location.pathname !== item.path) {
                   e.target.style.background = 'transparent';
+                  e.target.style.color = `${colors.white}cc`;
                 }
               }}
             >
-              <span style={{ marginRight: '10px' }}>{item.icon}</span>
-              {item.label}
+              <span style={{ fontSize: '18px' }}>{item.icon}</span>
+              <span style={{ flex: 1 }}>{item.label}</span>
+              <span style={{ 
+                color: location.pathname === item.path ? colors.primary : colors.secondary,
+                fontWeight: '300',
+                fontSize: '12px'
+              }}>
+                {index + 1}
+              </span>
             </button>
           ))}
         </nav>
 
+        {/* Footer */}
         <div style={{ 
-          padding: '20px', 
-          borderTop: '1px solid rgba(255,255,255,0.2)',
+          padding: '20px 24px',
+          borderTop: `1px solid ${colors.secondary}40`,
           position: 'absolute',
           bottom: 0,
-          width: '210px'
+          width: '280px',
+          background: colors.primary
         }}>
           <button
             onClick={handleLogout}
             style={{
               width: '100%',
-              padding: '10px',
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              color: 'white',
-              borderRadius: '5px',
+              padding: '12px',
+              background: 'transparent',
+              border: `1px solid ${colors.secondary}60`,
+              color: colors.light,
+              borderRadius: '8px',
               cursor: 'pointer',
-              fontSize: '14px'
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = colors.secondary;
+              e.target.style.borderColor = colors.secondary;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'transparent';
+              e.target.style.borderColor = `${colors.secondary}60`;
             }}
           >
-            🚪 Cerrar Sesión
+            <span>🚪</span>
+            <span>Cerrar Sesión</span>
           </button>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Contenido Principal */}
       <div style={{ 
         flex: 1, 
-        marginLeft: '250px',
-        background: '#f5f5f5',
-        minHeight: '100vh'
+        marginLeft: '280px',
+        minHeight: '100vh',
+        background: colors.gray
       }}>
-        {/* Header simplificado sin botones */}
-        <div style={{
-          background: 'white',
-          padding: '15px 30px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        {/* Header */}
+        <header style={{
+          background: colors.white,
+          padding: '20px 32px',
+          borderBottom: `1px solid ${colors.light}`,
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <div style={{ color: '#666' }}>
-            {new Date().toLocaleDateString('es-ES', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
+          <div>
+            <h1 style={{ 
+              margin: 0, 
+              fontSize: '26px', 
+              fontWeight: '600',
+              color: colors.primary
+            }}>
+              {location.pathname === '/dashboard' && 'Dashboard'}
+              {location.pathname === '/products' && 'Gestión de Productos'}
+              {location.pathname === '/sales' && 'Historial de Ventas'}
+              {location.pathname === '/sales/new' && 'Nueva Venta'}
+            </h1>
+            <p style={{ 
+              margin: '4px 0 0', 
+              color: colors.secondary,
+              fontSize: '14px'
+            }}>
+              {new Date().toLocaleDateString('es-ES', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
           </div>
-        </div>
+          
+          <div style={{
+            padding: '8px 16px',
+            background: colors.light,
+            borderRadius: '20px',
+            color: colors.primary,
+            fontSize: '13px',
+            fontWeight: '500',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            <span style={{ 
+              width: '8px', 
+              height: '8px', 
+              background: colors.accent,
+              borderRadius: '50%',
+              display: 'inline-block'
+            }} />
+            Sistema en línea
+          </div>
+        </header>
 
-        {/* Page Content */}
-        <div style={{ padding: '20px' }}>
+        {/* Contenido */}
+        <main style={{ padding: '32px' }}>
           {children}
-        </div>
+        </main>
       </div>
     </div>
   );
