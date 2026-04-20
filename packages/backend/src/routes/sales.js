@@ -31,7 +31,7 @@ router.get('/:id', authenticateToken, requireAdmin, async (req, res) => {
     
     const saleResult = await query('SELECT * FROM sales WHERE id = $1', [id]);
     const itemsResult = await query(`
-      SELECT si.*, p.name as product_name
+      SELECT si.*, p.name as product_name, p.image_path
       FROM sale_items si
       JOIN products p ON si.product_id = p.id
       WHERE si.sale_id = $1
@@ -47,23 +47,17 @@ router.get('/:id', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// POST /api/sales - Crear venta (solo admin)
+// POST /api/sales - Crear venta
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
-  const client = await query('BEGIN');
-  
   try {
     const { items } = req.body;
     const saleId = uuidv4();
     
-    // Crear la venta
-    await query(
-      'INSERT INTO sales (id) VALUES ($1)',
-      [saleId]
-    );
+    await query('BEGIN');
     
-    // Procesar cada item
+    await query('INSERT INTO sales (id) VALUES ($1)', [saleId]);
+    
     for (const item of items) {
-      // Obtener precio actual del producto
       const productResult = await query(
         'SELECT price, stock FROM products WHERE id = $1',
         [item.product_id]
@@ -75,18 +69,15 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       
       const product = productResult.rows[0];
       
-      // Verificar stock
       if (product.stock < item.quantity) {
         throw new Error(`Stock insuficiente para producto ${item.product_id}`);
       }
       
-      // Insertar item de venta
       await query(
         'INSERT INTO sale_items (id, sale_id, product_id, quantity, price_at_time) VALUES ($1, $2, $3, $4, $5)',
         [uuidv4(), saleId, item.product_id, item.quantity, product.price]
       );
       
-      // Actualizar stock
       await query(
         'UPDATE products SET stock = stock - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
         [item.quantity, item.product_id]
@@ -101,6 +92,104 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     await query('ROLLBACK');
     console.error('Error creating sale:', error);
     res.status(500).json({ error: error.message || 'Error al crear venta' });
+  }
+});
+
+// PUT /api/sales/:id - Actualizar venta
+router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { items } = req.body;
+    
+    await query('BEGIN');
+    
+    // Obtener items originales
+    const originalItems = await query(
+      'SELECT product_id, quantity FROM sale_items WHERE sale_id = $1',
+      [id]
+    );
+    
+    // Restaurar stock original
+    for (const item of originalItems.rows) {
+      await query(
+        'UPDATE products SET stock = stock + $1 WHERE id = $2',
+        [item.quantity, item.product_id]
+      );
+    }
+    
+    // Eliminar items originales
+    await query('DELETE FROM sale_items WHERE sale_id = $1', [id]);
+    
+    // Insertar nuevos items
+    for (const item of items) {
+      const productResult = await query(
+        'SELECT price, stock FROM products WHERE id = $1',
+        [item.product_id]
+      );
+      
+      if (productResult.rows.length === 0) {
+        throw new Error(`Producto ${item.product_id} no encontrado`);
+      }
+      
+      const product = productResult.rows[0];
+      
+      if (product.stock < item.quantity) {
+        throw new Error(`Stock insuficiente para producto ${item.product_id}`);
+      }
+      
+      await query(
+        'INSERT INTO sale_items (id, sale_id, product_id, quantity, price_at_time) VALUES ($1, $2, $3, $4, $5)',
+        [uuidv4(), id, item.product_id, item.quantity, product.price]
+      );
+      
+      await query(
+        'UPDATE products SET stock = stock - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [item.quantity, item.product_id]
+      );
+    }
+    
+    await query('UPDATE sales SET updated_at = CURRENT_TIMESTAMP WHERE id = $1', [id]);
+    await query('COMMIT');
+    
+    const result = await query('SELECT * FROM sales WHERE id = $1', [id]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    await query('ROLLBACK');
+    console.error('Error updating sale:', error);
+    res.status(500).json({ error: error.message || 'Error al actualizar venta' });
+  }
+});
+
+// DELETE /api/sales/:id - Eliminar venta
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await query('BEGIN');
+    
+    // Restaurar stock
+    const items = await query(
+      'SELECT product_id, quantity FROM sale_items WHERE sale_id = $1',
+      [id]
+    );
+    
+    for (const item of items.rows) {
+      await query(
+        'UPDATE products SET stock = stock + $1 WHERE id = $2',
+        [item.quantity, item.product_id]
+      );
+    }
+    
+    // Eliminar items y venta
+    await query('DELETE FROM sale_items WHERE sale_id = $1', [id]);
+    await query('DELETE FROM sales WHERE id = $1', [id]);
+    
+    await query('COMMIT');
+    res.json({ message: 'Venta eliminada correctamente' });
+  } catch (error) {
+    await query('ROLLBACK');
+    console.error('Error deleting sale:', error);
+    res.status(500).json({ error: 'Error al eliminar venta' });
   }
 });
 
