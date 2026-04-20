@@ -39,7 +39,9 @@ function Layout({ children }) {
         position: 'fixed',
         height: '100vh',
         overflowY: 'auto',
-        boxShadow: '2px 0 8px rgba(0,0,0,0.05)'
+        boxShadow: '2px 0 8px rgba(0,0,0,0.05)',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
         {/* Logo */}
         <div style={{ 
@@ -109,8 +111,8 @@ function Layout({ children }) {
           </div>
         </div>
 
-        {/* Menú */}
-        <nav style={{ padding: '20px 16px' }}>
+        {/* Menú de Navegación */}
+        <nav style={{ padding: '20px 16px', flex: 1 }}>
           <p style={{ 
             padding: '0 8px', 
             margin: '0 0 16px', 
@@ -161,54 +163,44 @@ function Layout({ children }) {
             >
               <span style={{ fontSize: '18px' }}>{item.icon}</span>
               <span style={{ flex: 1 }}>{item.label}</span>
-              <span style={{ 
-                color: location.pathname === item.path ? colors.primary : colors.secondary,
-                fontWeight: '300',
-                fontSize: '12px'
-              }}>
-                {index + 1}
-              </span>
             </button>
           ))}
         </nav>
 
-        {/* Footer */}
+        {/* Cerrar Sesión - Ahora dentro del menú */}
         <div style={{ 
-          padding: '20px 24px',
+          padding: '20px 16px',
           borderTop: `1px solid ${colors.secondary}40`,
-          position: 'absolute',
-          bottom: 0,
-          width: '280px',
-          background: colors.primary
+          marginTop: 'auto'
         }}>
           <button
             onClick={handleLogout}
             style={{
               width: '100%',
-              padding: '12px',
+              padding: '14px 16px',
               background: 'transparent',
-              border: `1px solid ${colors.secondary}60`,
-              color: colors.light,
-              borderRadius: '8px',
+              border: 'none',
+              color: `${colors.white}cc`,
+              textAlign: 'left',
+              fontSize: '15px',
+              fontWeight: '400',
               cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'all 0.2s',
+              borderRadius: '10px',
+              transition: 'all 0.2s ease',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
+              gap: '12px'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = colors.secondary;
-              e.target.style.borderColor = colors.secondary;
+              e.target.style.background = '#EF444440';
+              e.target.style.color = '#FCA5A5';
             }}
             onMouseLeave={(e) => {
               e.target.style.background = 'transparent';
-              e.target.style.borderColor = `${colors.secondary}60`;
+              e.target.style.color = `${colors.white}cc`;
             }}
           >
-            <span>🚪</span>
+            <span style={{ fontSize: '18px' }}>🚪</span>
             <span>Cerrar Sesión</span>
           </button>
         </div>
