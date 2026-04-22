@@ -49,6 +49,7 @@ function Dashboard() {
     });
   };
 
+  
   const StatCard = ({ title, value, icon, trend }) => (
     <div style={{
       background: colors.white,

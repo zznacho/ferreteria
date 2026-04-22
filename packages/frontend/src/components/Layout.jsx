@@ -224,19 +224,6 @@ function Layout({ children }) {
   flexWrap: 'wrap',
   gap: '10px'
 }}>
-  <div>
-    <h1 style={{ 
-      margin: 0, 
-      fontSize: '24px', 
-      fontWeight: '600',
-      color: colors.primary
-    }}>
-      {location.pathname === '/dashboard' && 'Dashboard'}
-      {location.pathname === '/products' && 'Gestión de Productos'}
-      {location.pathname === '/sales' && 'Historial de Ventas'}
-      {location.pathname === '/sales/new' && 'Nueva Venta'}
-    </h1>
-  </div>
   
   <div style={{
     display: 'flex',
