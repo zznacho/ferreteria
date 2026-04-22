@@ -213,62 +213,71 @@ function Layout({ children }) {
         minHeight: '100vh',
         background: colors.gray
       }}>
-        {/* Header */}
-        <header style={{
-          background: colors.white,
-          padding: '20px 32px',
-          borderBottom: `1px solid ${colors.light}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div>
-            <h1 style={{ 
-              margin: 0, 
-              fontSize: '26px', 
-              fontWeight: '600',
-              color: colors.primary
-            }}>
-              {location.pathname === '/dashboard' && 'Dashboard'}
-              {location.pathname === '/products' && 'Gestión de Productos'}
-              {location.pathname === '/sales' && 'Historial de Ventas'}
-              {location.pathname === '/sales/new' && 'Nueva Venta'}
-            </h1>
-            <p style={{ 
-              margin: '4px 0 0', 
-              color: colors.secondary,
-              fontSize: '14px'
-            }}>
-              {new Date().toLocaleDateString('es-ES', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </p>
-          </div>
-          
-          <div style={{
-            padding: '8px 16px',
-            background: colors.light,
-            borderRadius: '20px',
-            color: colors.primary,
-            fontSize: '13px',
-            fontWeight: '500',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}>
-            <span style={{ 
-              width: '8px', 
-              height: '8px', 
-              background: colors.accent,
-              borderRadius: '50%',
-              display: 'inline-block'
-            }} />
-            Sistema en línea
-          </div>
-        </header>
+{/* Header */}
+<header style={{
+  background: colors.white,
+  padding: '16px 32px',
+  borderBottom: `1px solid ${colors.light}`,
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: '10px'
+}}>
+  <div>
+    <h1 style={{ 
+      margin: 0, 
+      fontSize: '24px', 
+      fontWeight: '600',
+      color: colors.primary
+    }}>
+      {location.pathname === '/dashboard' && 'Dashboard'}
+      {location.pathname === '/products' && 'Gestión de Productos'}
+      {location.pathname === '/sales' && 'Historial de Ventas'}
+      {location.pathname === '/sales/new' && 'Nueva Venta'}
+    </h1>
+  </div>
+  
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px'
+  }}>
+    <p style={{ 
+      margin: 0, 
+      color: colors.secondary,
+      fontSize: '14px'
+    }}>
+      {new Date().toLocaleDateString('es-ES', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })}
+    </p>
+    
+    <div style={{
+      padding: '6px 14px',
+      background: colors.light,
+      borderRadius: '20px',
+      color: colors.primary,
+      fontSize: '12px',
+      fontWeight: '500',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px'
+    }}>
+      <span style={{ 
+        width: '8px', 
+        height: '8px', 
+        background: colors.accent,
+        borderRadius: '50%',
+        display: 'inline-block'
+      }} />
+      En línea
+    </div>
+  </div>
+</header>
 
         {/* Contenido */}
         <main style={{ padding: '32px' }}>
