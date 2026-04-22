@@ -10,21 +10,34 @@ const colors = {
   gray: '#F8FAFC'
 };
 
+// Opciones predefinidas
+const CATEGORIES = [
+  'Carpintería',
+  'Construcción',
+  'Electricidad',
+  'Mueble',
+  'Jardinería',
+  'Fijación',
+  'Herramientas'
+];
+
+const WEIGHT_UNITS = ['kg', 'g'];
+const MEASURE_UNITS = ['metros', 'centímetros', 'milímetros'];
+const VOLTAGE_OPTIONS = ['12V', '24V', '110V', '220V', '380V'];
+
 function Products() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
   
-  // Estados para opciones de selects
-  const [categories, setCategories] = useState([]);
+  // Estados para opciones de selects dinámicos (marcas)
   const [brands, setBrands] = useState([]);
-  const [measures, setMeasures] = useState([]);
-  const [voltages, setVoltages] = useState([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -32,8 +45,10 @@ function Products() {
     stock: '',
     category: '',
     brand: '',
-    weight: '',
-    measure: '',
+    weightValue: '',
+    weightUnit: 'kg',
+    measureValue: '',
+    measureUnit: 'metros',
     voltage: '',
     description: '',
     image: null
@@ -41,82 +56,48 @@ function Products() {
 
   useEffect(() => {
     loadProducts();
-    loadSelectOptions();
+    loadBrands();
   }, []);
 
   useEffect(() => {
     filterAndSortProducts();
-  }, [products, searchTerm, sortBy]);
+  }, [products, searchTerm, selectedCategory, sortBy]);
 
   const loadProducts = () => {
     const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
     setProducts(savedProducts);
   };
 
-  const loadSelectOptions = () => {
-    // Cargar opciones guardadas de localStorage
-    const savedCategories = JSON.parse(localStorage.getItem('categories') || '[]');
+  const loadBrands = () => {
     const savedBrands = JSON.parse(localStorage.getItem('brands') || '[]');
-    const savedMeasures = JSON.parse(localStorage.getItem('measures') || '[]');
-    const savedVoltages = JSON.parse(localStorage.getItem('voltages') || '[]');
-    
-    setCategories(savedCategories);
     setBrands(savedBrands);
-    setMeasures(savedMeasures);
-    setVoltages(savedVoltages);
   };
 
-  const saveSelectOption = (type, value) => {
+  const saveBrand = (value) => {
     if (!value || value.trim() === '') return;
     
-    let savedOptions = [];
-    let setter;
-    
-    switch(type) {
-      case 'category':
-        savedOptions = JSON.parse(localStorage.getItem('categories') || '[]');
-        if (!savedOptions.includes(value)) {
-          savedOptions.push(value);
-          localStorage.setItem('categories', JSON.stringify(savedOptions));
-          setCategories(savedOptions);
-        }
-        break;
-      case 'brand':
-        savedOptions = JSON.parse(localStorage.getItem('brands') || '[]');
-        if (!savedOptions.includes(value)) {
-          savedOptions.push(value);
-          localStorage.setItem('brands', JSON.stringify(savedOptions));
-          setBrands(savedOptions);
-        }
-        break;
-      case 'measure':
-        savedOptions = JSON.parse(localStorage.getItem('measures') || '[]');
-        if (!savedOptions.includes(value)) {
-          savedOptions.push(value);
-          localStorage.setItem('measures', JSON.stringify(savedOptions));
-          setMeasures(savedOptions);
-        }
-        break;
-      case 'voltage':
-        savedOptions = JSON.parse(localStorage.getItem('voltages') || '[]');
-        if (!savedOptions.includes(value)) {
-          savedOptions.push(value);
-          localStorage.setItem('voltages', JSON.stringify(savedOptions));
-          setVoltages(savedOptions);
-        }
-        break;
+    const savedBrands = JSON.parse(localStorage.getItem('brands') || '[]');
+    if (!savedBrands.includes(value)) {
+      savedBrands.push(value);
+      localStorage.setItem('brands', JSON.stringify(savedBrands));
+      setBrands(savedBrands);
     }
   };
 
   const filterAndSortProducts = () => {
     let filtered = [...products];
 
-    // Filtrar por nombre, categoría o marca
+    // Filtrar por categoría
+    if (selectedCategory) {
+      filtered = filtered.filter(product => product.category === selectedCategory);
+    }
+
+    // Filtrar por nombre, marca o descripción
     if (searchTerm) {
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (product.brand && product.brand.toLowerCase().includes(searchTerm.toLowerCase()))
+        (product.brand && product.brand.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -172,11 +153,13 @@ function Products() {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Guardar opciones de selects si son nuevas
-    if (formData.category) saveSelectOption('category', formData.category);
-    if (formData.brand) saveSelectOption('brand', formData.brand);
-    if (formData.measure) saveSelectOption('measure', formData.measure);
-    if (formData.voltage) saveSelectOption('voltage', formData.voltage);
+    // Guardar marca si es nueva
+    if (formData.brand) saveBrand(formData.brand);
+    
+    // Combinar peso con unidad
+    const weight = formData.weightValue ? `${formData.weightValue} ${formData.weightUnit}` : null;
+    // Combinar medida con unidad
+    const measure = formData.measureValue ? `${formData.measureValue} ${formData.measureUnit}` : null;
     
     const productData = {
       id: editingProduct?.id || Date.now(),
@@ -185,8 +168,8 @@ function Products() {
       stock: parseInt(formData.stock),
       category: formData.category || null,
       brand: formData.brand || null,
-      weight: formData.weight || null,
-      measure: formData.measure || null,
+      weight: weight,
+      measure: measure,
       voltage: formData.voltage || null,
       description: formData.description || null,
       image: formData.image || null,
@@ -213,8 +196,10 @@ function Products() {
       stock: '', 
       category: '', 
       brand: '', 
-      weight: '', 
-      measure: '', 
+      weightValue: '', 
+      weightUnit: 'kg', 
+      measureValue: '', 
+      measureUnit: 'metros', 
       voltage: '', 
       description: '', 
       image: null 
@@ -231,14 +216,35 @@ function Products() {
 
   const handleEdit = (product) => {
     setEditingProduct(product);
+    
+    // Parsear peso
+    let weightValue = '';
+    let weightUnit = 'kg';
+    if (product.weight) {
+      const parts = product.weight.split(' ');
+      weightValue = parts[0] || '';
+      weightUnit = parts[1] || 'kg';
+    }
+    
+    // Parsear medida
+    let measureValue = '';
+    let measureUnit = 'metros';
+    if (product.measure) {
+      const parts = product.measure.split(' ');
+      measureValue = parts[0] || '';
+      measureUnit = parts[1] || 'metros';
+    }
+    
     setFormData({
       name: product.name,
       price: product.price,
       stock: product.stock,
       category: product.category || '',
       brand: product.brand || '',
-      weight: product.weight || '',
-      measure: product.measure || '',
+      weightValue: weightValue,
+      weightUnit: weightUnit,
+      measureValue: measureValue,
+      measureUnit: measureUnit,
       voltage: product.voltage || '',
       description: product.description || '',
       image: product.image || null
@@ -249,6 +255,10 @@ function Products() {
 
   const clearSearch = () => {
     setSearchTerm('');
+  };
+
+  const clearCategoryFilter = () => {
+    setSelectedCategory('');
   };
 
   const DefaultProductImage = () => (
@@ -266,6 +276,28 @@ function Products() {
       📦
     </div>
   );
+
+  // Estilos para inputs y selects
+  const inputStyle = {
+    width: '100%',
+    padding: '10px',
+    border: `2px solid ${colors.light}`,
+    borderRadius: '8px',
+    fontSize: '14px',
+    outline: 'none',
+    background: 'white'
+  };
+
+  const selectStyle = {
+    width: '100%',
+    padding: '10px',
+    border: `2px solid ${colors.light}`,
+    borderRadius: '8px',
+    fontSize: '14px',
+    outline: 'none',
+    background: 'white',
+    cursor: 'pointer'
+  };
 
   return (
     <div style={{ padding: '20px' }}>
@@ -285,8 +317,10 @@ function Products() {
               stock: '', 
               category: '', 
               brand: '', 
-              weight: '', 
-              measure: '', 
+              weightValue: '', 
+              weightUnit: 'kg', 
+              measureValue: '', 
+              measureUnit: 'metros', 
               voltage: '', 
               description: '', 
               image: null 
@@ -309,108 +343,230 @@ function Products() {
         </button>
       </div>
 
-      {/* Barra de búsqueda y ordenamiento */}
-      <div style={{
+{/* Filtros */}
+<div style={{
+  background: 'white',
+  padding: '20px',
+  borderRadius: '12px',
+  marginBottom: '20px',
+  border: `1px solid ${colors.light}`
+}}>
+  {/* Primera fila: Búsqueda */}
+  <div style={{ marginBottom: '15px', position: 'relative' }}>
+    <input
+      type="text"
+      placeholder="🔍 Buscar por nombre, marca o descripción..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      style={{
+        width: '100%',
+        padding: '12px 40px 12px 12px',
+        border: `2px solid ${colors.light}`,
+        borderRadius: '8px',
+        fontSize: '14px',
+        outline: 'none',
         background: 'white',
-        padding: '20px',
-        borderRadius: '12px',
-        marginBottom: '20px',
-        border: `1px solid ${colors.light}`
+        boxSizing: 'border-box'
+      }}
+      onFocus={(e) => e.target.style.borderColor = colors.accent}
+      onBlur={(e) => e.target.style.borderColor = colors.light}
+    />
+    {searchTerm && (
+      <button
+        onClick={clearSearch}
+        style={{
+          position: 'absolute',
+          right: '10px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'none',
+          border: 'none',
+          fontSize: '20px',
+          cursor: 'pointer',
+          color: colors.secondary
+        }}
+      >
+        ✕
+      </button>
+    )}
+  </div>
+
+  {/* Segunda fila: Filtro por categoría y ordenamiento */}
+  <div style={{ 
+    display: 'flex', 
+    gap: '15px', 
+    alignItems: 'center',
+    flexWrap: 'wrap'
+  }}>
+    <div style={{ minWidth: '200px', flex: '1' }}>
+      <label style={{ 
+        display: 'block', 
+        marginBottom: '5px', 
+        color: colors.secondary, 
+        fontSize: '12px',
+        fontWeight: '600'
       }}>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr auto', 
-          gap: '20px',
-          alignItems: 'center'
+        Filtrar por categoría
+      </label>
+      <select
+        value={selectedCategory}
+        onChange={(e) => setSelectedCategory(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '10px',
+          border: `2px solid ${colors.light}`,
+          borderRadius: '8px',
+          fontSize: '14px',
+          outline: 'none',
+          background: 'white',
+          cursor: 'pointer'
+        }}
+      >
+        <option value="">Todas las categorías</option>
+        {CATEGORIES.map(cat => (
+          <option key={cat} value={cat}>{cat}</option>
+        ))}
+      </select>
+    </div>
+
+    <div style={{ minWidth: '200px', flex: '1' }}>
+      <label style={{ 
+        display: 'block', 
+        marginBottom: '5px', 
+        color: colors.secondary, 
+        fontSize: '12px',
+        fontWeight: '600'
+      }}>
+        Ordenar por
+      </label>
+      <select
+        value={sortBy}
+        onChange={(e) => setSortBy(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '10px',
+          border: `2px solid ${colors.light}`,
+          borderRadius: '8px',
+          fontSize: '14px',
+          outline: 'none',
+          background: 'white',
+          cursor: 'pointer'
+        }}
+      >
+        <option value="name">📝 Nombre (A-Z)</option>
+        <option value="price-asc">💰 Precio (Menor a Mayor)</option>
+        <option value="price-desc">💰 Precio (Mayor a Menor)</option>
+        <option value="stock-asc">📦 Stock (Menor a Mayor)</option>
+        <option value="stock-desc">📦 Stock (Mayor a Menor)</option>
+      </select>
+    </div>
+  </div>
+
+  {/* Chips de filtros activos y resultados */}
+  {(searchTerm || selectedCategory) && (
+    <div style={{ 
+      marginTop: '15px', 
+      paddingTop: '15px',
+      borderTop: `1px solid ${colors.light}`,
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '12px', 
+      flexWrap: 'wrap' 
+    }}>
+      <span style={{ color: colors.secondary, fontSize: '13px' }}>
+        Filtros activos:
+      </span>
+      
+      {selectedCategory && (
+        <span style={{
+          background: colors.accent,
+          color: colors.primary,
+          padding: '6px 12px',
+          borderRadius: '20px',
+          fontSize: '13px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontWeight: '500'
         }}>
-          <div style={{ position: 'relative' }}>
-            <input
-              type="text"
-              placeholder="🔍 Buscar por nombre, categoría o marca..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 40px 12px 12px',
-                border: `2px solid ${colors.light}`,
-                borderRadius: '8px',
-                fontSize: '16px',
-                boxSizing: 'border-box',
-                outline: 'none'
-              }}
-              onFocus={(e) => e.target.style.borderColor = colors.accent}
-              onBlur={(e) => e.target.style.borderColor = colors.light}
-            />
-            {searchTerm && (
-              <button
-                onClick={clearSearch}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                  color: colors.secondary
-                }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <label style={{ color: colors.primary, fontWeight: '600' }}>Ordenar:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              style={{
-                padding: '10px',
-                border: `2px solid ${colors.light}`,
-                borderRadius: '8px',
-                fontSize: '14px',
-                cursor: 'pointer',
-                background: 'white',
-                outline: 'none'
-              }}
-            >
-              <option value="name">📝 Nombre (A-Z)</option>
-              <option value="price-asc">💰 Precio (Menor a Mayor)</option>
-              <option value="price-desc">💰 Precio (Mayor a Menor)</option>
-              <option value="stock-asc">📦 Stock (Menor a Mayor)</option>
-              <option value="stock-desc">📦 Stock (Mayor a Menor)</option>
-            </select>
-          </div>
-        </div>
-
-        {searchTerm && (
-          <div style={{ 
-            marginTop: '15px', 
-            padding: '10px', 
-            background: colors.light,
-            borderRadius: '8px',
-            color: colors.primary
-          }}>
-            <strong>{filteredProducts.length}</strong> producto(s) encontrado(s)
-          </div>
-        )}
-      </div>
-
+          📂 {selectedCategory}
+          <button
+            onClick={clearCategoryFilter}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: colors.primary,
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              padding: '0 4px'
+            }}
+          >
+            ✕
+          </button>
+        </span>
+      )}
+      
+      {searchTerm && (
+        <span style={{
+          background: colors.light,
+          color: colors.primary,
+          padding: '6px 12px',
+          borderRadius: '20px',
+          fontSize: '13px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontWeight: '500'
+        }}>
+          🔍 "{searchTerm}"
+          <button
+            onClick={clearSearch}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: colors.primary,
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              padding: '0 4px'
+            }}
+          >
+            ✕
+          </button>
+        </span>
+      )}
+      
+      <span style={{ 
+        marginLeft: 'auto', 
+        color: colors.primary, 
+        fontSize: '13px',
+        fontWeight: '600',
+        background: colors.gray,
+        padding: '6px 12px',
+        borderRadius: '20px'
+      }}>
+        {filteredProducts.length} producto(s) encontrado(s)
+      </span>
+    </div>
+  )}
+</div>
       {showForm && (
         <div style={{
           background: 'white',
           padding: '25px',
           borderRadius: '12px',
           marginBottom: '30px',
-          border: `1px solid ${colors.light}`
+          border: `1px solid ${colors.light}`,
+          maxHeight: '80vh',
+          overflowY: 'auto'
         }}>
           <h2 style={{ marginBottom: '20px', color: colors.primary }}>
             {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
           </h2>
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 200px', gap: '20px' }}>
+              {/* Columna 1 */}
               <div>
                 <div style={{ marginBottom: '15px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
@@ -420,14 +576,7 @@ function Products() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: `2px solid ${colors.light}`,
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none'
-                    }}
+                    style={inputStyle}
                     onFocus={(e) => e.target.style.borderColor = colors.accent}
                     onBlur={(e) => e.target.style.borderColor = colors.light}
                     required
@@ -438,27 +587,16 @@ function Products() {
                   <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
                     Categoría
                   </label>
-                  <input
-                    type="text"
-                    list="categories-list"
+                  <select
                     value={formData.category}
                     onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: `2px solid ${colors.light}`,
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = colors.accent}
-                    onBlur={(e) => e.target.style.borderColor = colors.light}
-                  />
-                  <datalist id="categories-list">
-                    {categories.map((cat, i) => (
-                      <option key={i} value={cat} />
+                    style={selectStyle}
+                  >
+                    <option value="">Seleccionar categoría</option>
+                    {CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
                     ))}
-                  </datalist>
+                  </select>
                 </div>
                 
                 <div style={{ marginBottom: '15px' }}>
@@ -470,14 +608,7 @@ function Products() {
                     list="brands-list"
                     value={formData.brand}
                     onChange={(e) => setFormData({...formData, brand: e.target.value})}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: `2px solid ${colors.light}`,
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none'
-                    }}
+                    style={inputStyle}
                     onFocus={(e) => e.target.style.borderColor = colors.accent}
                     onBlur={(e) => e.target.style.borderColor = colors.light}
                   />
@@ -490,27 +621,32 @@ function Products() {
                 
                 <div style={{ marginBottom: '15px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Descripción
+                    Peso
                   </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: `2px solid ${colors.light}`,
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none',
-                      resize: 'vertical',
-                      minHeight: '80px'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = colors.accent}
-                    onBlur={(e) => e.target.style.borderColor = colors.light}
-                  />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      placeholder="Valor"
+                      value={formData.weightValue}
+                      onChange={(e) => setFormData({...formData, weightValue: e.target.value})}
+                      style={{ ...inputStyle, width: '60%' }}
+                      onFocus={(e) => e.target.style.borderColor = colors.accent}
+                      onBlur={(e) => e.target.style.borderColor = colors.light}
+                    />
+                    <select
+                      value={formData.weightUnit}
+                      onChange={(e) => setFormData({...formData, weightUnit: e.target.value})}
+                      style={{ ...selectStyle, width: '40%' }}
+                    >
+                      {WEIGHT_UNITS.map(unit => (
+                        <option key={unit} value={unit}>{unit}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
+              {/* Columna 2 */}
               <div>
                 <div style={{ marginBottom: '15px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
@@ -522,14 +658,7 @@ function Products() {
                     min="0"
                     value={formData.price}
                     onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: `2px solid ${colors.light}`,
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none'
-                    }}
+                    style={inputStyle}
                     onFocus={(e) => e.target.style.borderColor = colors.accent}
                     onBlur={(e) => e.target.style.borderColor = colors.light}
                     required
@@ -545,14 +674,7 @@ function Products() {
                     min="0"
                     value={formData.stock}
                     onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: `2px solid ${colors.light}`,
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none'
-                    }}
+                    style={inputStyle}
                     onFocus={(e) => e.target.style.borderColor = colors.accent}
                     onBlur={(e) => e.target.style.borderColor = colors.light}
                     required
@@ -561,83 +683,65 @@ function Products() {
                 
                 <div style={{ marginBottom: '15px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Peso
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.weight}
-                    onChange={(e) => setFormData({...formData, weight: e.target.value})}
-                    placeholder="Ej: 2.5 kg"
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: `2px solid ${colors.light}`,
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = colors.accent}
-                    onBlur={(e) => e.target.style.borderColor = colors.light}
-                  />
-                </div>
-                
-                <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
                     Medida
                   </label>
-                  <input
-                    type="text"
-                    list="measures-list"
-                    value={formData.measure}
-                    onChange={(e) => setFormData({...formData, measure: e.target.value})}
-                    placeholder="Ej: 10x20 cm"
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: `2px solid ${colors.light}`,
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = colors.accent}
-                    onBlur={(e) => e.target.style.borderColor = colors.light}
-                  />
-                  <datalist id="measures-list">
-                    {measures.map((measure, i) => (
-                      <option key={i} value={measure} />
-                    ))}
-                  </datalist>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      placeholder="Valor"
+                      value={formData.measureValue}
+                      onChange={(e) => setFormData({...formData, measureValue: e.target.value})}
+                      style={{ ...inputStyle, width: '60%' }}
+                      onFocus={(e) => e.target.style.borderColor = colors.accent}
+                      onBlur={(e) => e.target.style.borderColor = colors.light}
+                    />
+                    <select
+                      value={formData.measureUnit}
+                      onChange={(e) => setFormData({...formData, measureUnit: e.target.value})}
+                      style={{ ...selectStyle, width: '40%' }}
+                    >
+                      {MEASURE_UNITS.map(unit => (
+                        <option key={unit} value={unit}>{unit}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 
                 <div style={{ marginBottom: '15px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
                     Voltaje
                   </label>
-                  <input
-                    type="text"
-                    list="voltages-list"
+                  <select
                     value={formData.voltage}
                     onChange={(e) => setFormData({...formData, voltage: e.target.value})}
-                    placeholder="Ej: 220V"
+                    style={selectStyle}
+                  >
+                    <option value="">Seleccionar voltaje</option>
+                    {VOLTAGE_OPTIONS.map(volt => (
+                      <option key={volt} value={volt}>{volt}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
+                    Descripción
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
                     style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: `2px solid ${colors.light}`,
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      outline: 'none'
+                      ...inputStyle,
+                      resize: 'vertical',
+                      minHeight: '80px'
                     }}
                     onFocus={(e) => e.target.style.borderColor = colors.accent}
                     onBlur={(e) => e.target.style.borderColor = colors.light}
                   />
-                  <datalist id="voltages-list">
-                    {voltages.map((voltage, i) => (
-                      <option key={i} value={voltage} />
-                    ))}
-                  </datalist>
                 </div>
               </div>
 
+              {/* Columna 3 - Imagen */}
               <div>
                 <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
                   Imagen
@@ -748,13 +852,14 @@ function Products() {
         </div>
       )}
 
+      {/* Tabla de productos */}
       <div style={{
         background: 'white',
         borderRadius: '12px',
         overflow: 'auto',
         border: `1px solid ${colors.light}`
       }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px' }}>
           <thead>
             <tr style={{ background: colors.primary, color: 'white' }}>
               <th style={{ padding: '12px', textAlign: 'left' }}></th>
@@ -770,7 +875,7 @@ function Products() {
             {filteredProducts.length === 0 ? (
               <tr>
                 <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
-                  {searchTerm ? 'No se encontraron productos' : 'No hay productos. ¡Crea uno nuevo!'}
+                  {searchTerm || selectedCategory ? 'No se encontraron productos con los filtros aplicados' : 'No hay productos. ¡Crea uno nuevo!'}
                 </td>
               </tr>
             ) : (
@@ -791,7 +896,19 @@ function Products() {
                       </p>
                     )}
                   </td>
-                  <td style={{ padding: '12px', color: colors.secondary }}>{product.category || '-'}</td>
+                  <td style={{ padding: '12px', color: colors.secondary }}>
+                    {product.category ? (
+                      <span style={{
+                        background: colors.light,
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        color: colors.primary
+                      }}>
+                        {product.category}
+                      </span>
+                    ) : '-'}
+                  </td>
                   <td style={{ padding: '12px', color: colors.secondary }}>{product.brand || '-'}</td>
                   <td style={{ padding: '12px', textAlign: 'right', fontWeight: '600', color: colors.primary }}>
                     ${product.price.toFixed(2)}
@@ -821,6 +938,36 @@ function Products() {
           </tbody>
         </table>
       </div>
+
+      {/* Estadísticas */}
+      {filteredProducts.length > 0 && (
+        <div style={{
+          marginTop: '20px',
+          padding: '15px 20px',
+          background: 'white',
+          borderRadius: '12px',
+          display: 'flex',
+          gap: '30px',
+          border: `1px solid ${colors.light}`
+        }}>
+          <div>
+            <span style={{ color: colors.secondary }}>Total productos: </span>
+            <strong style={{ color: colors.primary }}>{filteredProducts.length}</strong>
+          </div>
+          <div>
+            <span style={{ color: colors.secondary }}>Valor del inventario: </span>
+            <strong style={{ color: colors.primary }}>
+              ${filteredProducts.reduce((sum, p) => sum + (p.price * p.stock), 0).toFixed(2)}
+            </strong>
+          </div>
+          <div>
+            <span style={{ color: colors.secondary }}>Categorías: </span>
+            <strong style={{ color: colors.primary }}>
+              {[...new Set(filteredProducts.map(p => p.category).filter(Boolean))].length}
+            </strong>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
