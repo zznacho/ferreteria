@@ -279,10 +279,10 @@ function Layout({ children }) {
   </div>
 </header>
 
-        {/* Contenido */}
-        <main style={{ padding: '32px' }}>
-          {children}
-        </main>
+{/* Contenido */}
+<main style={{ padding: '24px' }}>
+  {children}
+</main>
       </div>
     </div>
   );
