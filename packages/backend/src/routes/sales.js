@@ -31,7 +31,7 @@ router.get('/:id', authenticateToken, requireAdmin, async (req, res) => {
     
     const saleResult = await query('SELECT * FROM sales WHERE id = $1', [id]);
     const itemsResult = await query(`
-      SELECT si.*, p.name as product_name, p.image_path
+      SELECT si.*, p.name as product_name, p.image_path, p.voltage, p.amperage, p.wattage
       FROM sale_items si
       JOIN products p ON si.product_id = p.id
       WHERE si.sale_id = $1
@@ -103,13 +103,11 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     
     await query('BEGIN');
     
-    // Obtener items originales
     const originalItems = await query(
       'SELECT product_id, quantity FROM sale_items WHERE sale_id = $1',
       [id]
     );
     
-    // Restaurar stock original
     for (const item of originalItems.rows) {
       await query(
         'UPDATE products SET stock = stock + $1 WHERE id = $2',
@@ -117,10 +115,8 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
       );
     }
     
-    // Eliminar items originales
     await query('DELETE FROM sale_items WHERE sale_id = $1', [id]);
     
-    // Insertar nuevos items
     for (const item of items) {
       const productResult = await query(
         'SELECT price, stock FROM products WHERE id = $1',
@@ -167,7 +163,6 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     
     await query('BEGIN');
     
-    // Restaurar stock
     const items = await query(
       'SELECT product_id, quantity FROM sale_items WHERE sale_id = $1',
       [id]
@@ -180,7 +175,6 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
       );
     }
     
-    // Eliminar items y venta
     await query('DELETE FROM sale_items WHERE sale_id = $1', [id]);
     await query('DELETE FROM sales WHERE id = $1', [id]);
     

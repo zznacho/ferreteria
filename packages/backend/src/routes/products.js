@@ -64,7 +64,7 @@ router.post('/', authenticateToken, requireAdmin, upload.single('image'), async 
   try {
     const { 
       name, price, stock, category, brand, 
-      weight, measure, voltage, description 
+      weight, measure, voltage, amperage, wattage, description 
     } = req.body;
     
     const id = uuidv4();
@@ -86,27 +86,11 @@ router.post('/', authenticateToken, requireAdmin, upload.single('image'), async 
       );
     }
     
-    // Guardar medida si es nueva
-    if (measure) {
-      await query(
-        'INSERT INTO product_measures (name) VALUES ($1) ON CONFLICT (name) DO NOTHING',
-        [measure]
-      );
-    }
-    
-    // Guardar voltaje si es nuevo
-    if (voltage) {
-      await query(
-        'INSERT INTO product_voltages (name) VALUES ($1) ON CONFLICT (name) DO NOTHING',
-        [voltage]
-      );
-    }
-    
     await query(
       `INSERT INTO products 
-       (id, name, price, stock, category, brand, weight, measure, voltage, description, image_path) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      [id, name, price, stock, category, brand, weight, measure, voltage, description, imagePath]
+       (id, name, price, stock, category, brand, weight, measure, voltage, amperage, wattage, description, image_path) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      [id, name, price, stock, category, brand, weight, measure, voltage, amperage, wattage, description, imagePath]
     );
     
     const result = await query('SELECT * FROM products WHERE id = $1', [id]);
@@ -128,7 +112,7 @@ router.put('/:id', authenticateToken, requireAdmin, upload.single('image'), asyn
     const { id } = req.params;
     const { 
       name, price, stock, category, brand, 
-      weight, measure, voltage, description 
+      weight, measure, voltage, amperage, wattage, description 
     } = req.body;
     
     const currentProduct = await query('SELECT image_path FROM products WHERE id = $1', [id]);
@@ -159,26 +143,14 @@ router.put('/:id', authenticateToken, requireAdmin, upload.single('image'), asyn
         [brand]
       );
     }
-    if (measure) {
-      await query(
-        'INSERT INTO product_measures (name) VALUES ($1) ON CONFLICT (name) DO NOTHING',
-        [measure]
-      );
-    }
-    if (voltage) {
-      await query(
-        'INSERT INTO product_voltages (name) VALUES ($1) ON CONFLICT (name) DO NOTHING',
-        [voltage]
-      );
-    }
     
     await query(
       `UPDATE products 
        SET name = $1, price = $2, stock = $3, category = $4, brand = $5, 
-           weight = $6, measure = $7, voltage = $8, description = $9, 
-           image_path = $10, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $11`,
-      [name, price, stock, category, brand, weight, measure, voltage, description, imagePath, id]
+           weight = $6, measure = $7, voltage = $8, amperage = $9, wattage = $10,
+           description = $11, image_path = $12, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $13`,
+      [name, price, stock, category, brand, weight, measure, voltage, amperage, wattage, description, imagePath, id]
     );
     
     const result = await query('SELECT * FROM products WHERE id = $1', [id]);
@@ -214,26 +186,6 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error deleting product:', error);
     res.status(500).json({ error: 'Error al eliminar producto' });
-  }
-});
-
-// GET /api/products/options - Obtener opciones de selects
-router.get('/options', async (req, res) => {
-  try {
-    const categories = await query('SELECT name FROM product_categories ORDER BY name');
-    const brands = await query('SELECT name FROM product_brands ORDER BY name');
-    const measures = await query('SELECT name FROM product_measures ORDER BY name');
-    const voltages = await query('SELECT name FROM product_voltages ORDER BY name');
-    
-    res.json({
-      categories: categories.rows.map(r => r.name),
-      brands: brands.rows.map(r => r.name),
-      measures: measures.rows.map(r => r.name),
-      voltages: voltages.rows.map(r => r.name)
-    });
-  } catch (error) {
-    console.error('Error getting options:', error);
-    res.status(500).json({ error: 'Error al obtener opciones' });
   }
 });
 
