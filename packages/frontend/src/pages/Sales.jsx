@@ -15,6 +15,8 @@ function Sales() {
   const [selectedSale, setSelectedSale] = useState(null);
   const [editingSale, setEditingSale] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('date-desc');
 
   useEffect(() => {
     loadData();
@@ -23,8 +25,45 @@ function Sales() {
   const loadData = () => {
     const savedSales = JSON.parse(localStorage.getItem('sales') || '[]');
     const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    setSales(savedSales.sort((a, b) => new Date(b.date) - new Date(a.date)));
+    setSales(savedSales);
     setProducts(savedProducts);
+  };
+
+  const filteredAndSortedSales = () => {
+    let filtered = [...sales];
+    
+    // Filtrar por ID de venta o nombre de producto
+    if (searchTerm) {
+      filtered = filtered.filter(sale => 
+        sale.id.toString().includes(searchTerm) ||
+        sale.items.some(item => 
+          item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+    
+    // Ordenar
+    switch (sortBy) {
+      case 'date-desc':
+        filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+        break;
+      case 'date-asc':
+        filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+        break;
+      case 'total-desc':
+        filtered.sort((a, b) => b.total - a.total);
+        break;
+      case 'total-asc':
+        filtered.sort((a, b) => a.total - b.total);
+        break;
+      case 'items-desc':
+        filtered.sort((a, b) => b.items.length - a.items.length);
+        break;
+      default:
+        break;
+    }
+    
+    return filtered;
   };
 
   const formatDate = (dateString) => {
@@ -38,11 +77,19 @@ function Sales() {
     });
   };
 
+  const formatShortDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit'
+    });
+  };
+
   const handleDeleteSale = (saleId) => {
     if (window.confirm('¿Estás seguro de eliminar esta venta? Se restaurará el stock de los productos.')) {
       const saleToDelete = sales.find(s => s.id === saleId);
       
-      // Restaurar stock
       const updatedProducts = products.map(product => {
         const saleItem = saleToDelete.items.find(item => item.id === product.id);
         if (saleItem) {
@@ -51,7 +98,6 @@ function Sales() {
         return product;
       });
       
-      // Eliminar venta
       const updatedSales = sales.filter(s => s.id !== saleId);
       
       localStorage.setItem('products', JSON.stringify(updatedProducts));
@@ -126,7 +172,10 @@ function Sales() {
         name: product.name,
         price: product.price,
         quantity: 1,
-        image: product.image
+        image: product.image,
+        voltage: product.voltage,
+        amperage: product.amperage,
+        wattage: product.wattage
       }]
     });
   };
@@ -139,7 +188,6 @@ function Sales() {
     
     const originalSale = sales.find(s => s.id === editingSale.id);
     
-    // Actualizar stock
     const updatedProducts = products.map(product => {
       const originalItem = originalSale.items.find(i => i.id === product.id);
       const newItem = editingSale.items.find(i => i.id === product.id);
@@ -155,7 +203,6 @@ function Sales() {
       return product;
     });
     
-    // Actualizar venta
     const updatedSale = {
       ...editingSale,
       total: editingSale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
@@ -186,8 +233,8 @@ function Sales() {
           src={product.image} 
           alt={product.name}
           style={{
-            width: '50px',
-            height: '50px',
+            width: '40px',
+            height: '40px',
             objectFit: 'cover',
             borderRadius: '6px'
           }}
@@ -196,61 +243,202 @@ function Sales() {
     }
     return (
       <div style={{
-        width: '50px',
-        height: '50px',
+        width: '40px',
+        height: '40px',
         background: colors.light,
         borderRadius: '6px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         color: colors.primary,
-        fontSize: '20px'
+        fontSize: '16px'
       }}>
         📦
       </div>
     );
   };
 
+  const filteredSales = filteredAndSortedSales();
+  
+  // Calcular estadísticas
+  const totalSales = filteredSales.length;
+  const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+  const totalItems = filteredSales.reduce((sum, sale) => sum + sale.items.reduce((s, i) => s + i.quantity, 0), 0);
+  const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
+
   return (
     <div style={{ padding: '20px' }}>
-      <h1 style={{ marginBottom: '30px', color: colors.primary }}>📈 Historial de Ventas</h1>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '30px'
+      }}>
+        <h1 style={{ color: colors.primary }}>📈 Historial de Ventas</h1>
+      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: selectedSale ? '1fr 400px' : '1fr', gap: '20px' }}>
-        {/* Lista de ventas */}
+      {/* Estadísticas */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '15px',
+        marginBottom: '20px'
+      }}>
+        <div style={{ background: colors.white, padding: '16px', borderRadius: '12px', border: `1px solid ${colors.light}` }}>
+          <p style={{ margin: 0, color: colors.secondary, fontSize: '12px', textTransform: 'uppercase' }}>Total Ventas</p>
+          <p style={{ margin: '5px 0 0', fontSize: '24px', fontWeight: '700', color: colors.primary }}>{totalSales}</p>
+        </div>
+        <div style={{ background: colors.white, padding: '16px', borderRadius: '12px', border: `1px solid ${colors.light}` }}>
+          <p style={{ margin: 0, color: colors.secondary, fontSize: '12px', textTransform: 'uppercase' }}>Ingresos Totales</p>
+          <p style={{ margin: '5px 0 0', fontSize: '24px', fontWeight: '700', color: '#10B981' }}>
+            ${totalRevenue.toLocaleString('es-ES', {minimumFractionDigits: 2})}
+          </p>
+        </div>
+        <div style={{ background: colors.white, padding: '16px', borderRadius: '12px', border: `1px solid ${colors.light}` }}>
+          <p style={{ margin: 0, color: colors.secondary, fontSize: '12px', textTransform: 'uppercase' }}>Productos Vendidos</p>
+          <p style={{ margin: '5px 0 0', fontSize: '24px', fontWeight: '700', color: colors.primary }}>{totalItems}</p>
+        </div>
+        <div style={{ background: colors.white, padding: '16px', borderRadius: '12px', border: `1px solid ${colors.light}` }}>
+          <p style={{ margin: 0, color: colors.secondary, fontSize: '12px', textTransform: 'uppercase' }}>Ticket Promedio</p>
+          <p style={{ margin: '5px 0 0', fontSize: '24px', fontWeight: '700', color: colors.accent }}>
+            ${averageTicket.toLocaleString('es-ES', {minimumFractionDigits: 2})}
+          </p>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div style={{
+        background: 'white',
+        padding: '20px',
+        borderRadius: '12px',
+        marginBottom: '20px',
+        border: `1px solid ${colors.light}`
+      }}>
+        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: '2', minWidth: '250px' }}>
+            <input
+              type="text"
+              placeholder="🔍 Buscar por ID de venta o nombre de producto..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 40px 12px 12px',
+                border: `2px solid ${colors.light}`,
+                borderRadius: '8px',
+                fontSize: '14px',
+                outline: 'none',
+                background: 'white'
+              }}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  color: colors.secondary
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{
+              flex: '1',
+              minWidth: '180px',
+              padding: '12px',
+              border: `2px solid ${colors.light}`,
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none',
+              background: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="date-desc">📅 Fecha (Más reciente)</option>
+            <option value="date-asc">📅 Fecha (Más antigua)</option>
+            <option value="total-desc">💰 Total (Mayor a Menor)</option>
+            <option value="total-asc">💰 Total (Menor a Mayor)</option>
+            <option value="items-desc">📦 Items (Mayor a Menor)</option>
+          </select>
+        </div>
+        
+        {searchTerm && (
+          <div style={{ marginTop: '15px', color: colors.secondary, fontSize: '13px' }}>
+            <strong>{filteredSales.length}</strong> venta(s) encontrada(s)
+          </div>
+        )}
+      </div>
+
+      {/* Tabla de ventas */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: selectedSale ? '1fr 400px' : '1fr', 
+        gap: '20px' 
+      }}>
         <div>
           <div style={{
             background: 'white',
             borderRadius: '12px',
-            overflow: 'hidden',
+            overflow: 'auto',
             border: `1px solid ${colors.light}`
           }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
               <thead>
                 <tr style={{ background: colors.primary, color: 'white' }}>
-                  <th style={{ padding: '15px', textAlign: 'left' }}>Fecha</th>
-                  <th style={{ padding: '15px', textAlign: 'center' }}>Items</th>
-                  <th style={{ padding: '15px', textAlign: 'right' }}>Total</th>
-                  <th style={{ padding: '15px', textAlign: 'center' }}>Acciones</th>
+                  <th style={{ padding: '12px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>ID Venta</th>
+                  <th style={{ padding: '12px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>Fecha</th>
+                  <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: '600' }}>Items</th>
+                  <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: '600' }}>Total</th>
+                  <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: '600' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {sales.length === 0 ? (
+                {filteredSales.length === 0 ? (
                   <tr>
-                    <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
-                      No hay ventas registradas
+                    <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
+                      {searchTerm ? 'No se encontraron ventas' : 'No hay ventas registradas'}
                     </td>
                   </tr>
                 ) : (
-                  sales.map(sale => (
+                  filteredSales.map(sale => (
                     <tr key={sale.id} style={{ borderBottom: `1px solid ${colors.light}` }}>
-                      <td style={{ padding: '15px' }}>{formatDate(sale.date)}</td>
-                      <td style={{ padding: '15px', textAlign: 'center' }}>
-                        {sale.items.length} productos
+                      <td style={{ padding: '12px', color: colors.secondary, fontSize: '12px' }}>
+                        #{sale.id.toString().slice(-8)}
                       </td>
-                      <td style={{ padding: '15px', textAlign: 'right', fontWeight: 'bold', color: '#10B981' }}>
-                        ${sale.total.toFixed(2)}
+                      <td style={{ padding: '12px' }}>
+                        <div style={{ fontWeight: '600', color: colors.primary }}>{formatShortDate(sale.date)}</div>
+                        <div style={{ fontSize: '11px', color: colors.secondary }}>
+                          {new Date(sale.date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
                       </td>
-                      <td style={{ padding: '15px', textAlign: 'center' }}>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <span style={{ 
+                          background: colors.light, 
+                          padding: '4px 8px', 
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          color: colors.primary,
+                          fontWeight: '600'
+                        }}>
+                          {sale.items.length} {sale.items.length === 1 ? 'producto' : 'productos'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: '#10B981' }}>
+                        ${sale.total.toLocaleString('es-ES', {minimumFractionDigits: 2})}
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
                         <button
                           onClick={() => setSelectedSale(selectedSale?.id === sale.id ? null : sale)}
                           style={{
@@ -260,7 +448,8 @@ function Sales() {
                             color: 'white',
                             border: 'none',
                             borderRadius: '6px',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            fontSize: '12px'
                           }}
                         >
                           {selectedSale?.id === sale.id ? 'Ocultar' : 'Ver'}
@@ -269,13 +458,14 @@ function Sales() {
                           onClick={() => handleEditSale(sale)}
                           style={{
                             marginRight: '8px',
-                            padding: '6px 12px',
+                            padding: '6px 10px',
                             background: colors.accent,
                             color: colors.primary,
                             border: 'none',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            fontWeight: '600'
+                            fontWeight: '600',
+                            fontSize: '12px'
                           }}
                         >
                           ✏️
@@ -283,12 +473,13 @@ function Sales() {
                         <button
                           onClick={() => handleDeleteSale(sale.id)}
                           style={{
-                            padding: '6px 12px',
+                            padding: '6px 10px',
                             background: '#EF4444',
                             color: 'white',
                             border: 'none',
                             borderRadius: '6px',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            fontSize: '12px'
                           }}
                         >
                           🗑️
@@ -307,7 +498,7 @@ function Sales() {
           <div>
             <div style={{
               background: 'white',
-              padding: '20px',
+              padding: '24px',
               borderRadius: '12px',
               border: `1px solid ${colors.light}`,
               position: 'sticky',
@@ -319,7 +510,7 @@ function Sales() {
                 alignItems: 'center',
                 marginBottom: '20px'
               }}>
-                <h3 style={{ color: colors.primary }}>Detalle de Venta</h3>
+                <h3 style={{ color: colors.primary, margin: 0 }}>Detalle de Venta</h3>
                 <button
                   onClick={() => setSelectedSale(null)}
                   style={{
@@ -334,29 +525,43 @@ function Sales() {
                 </button>
               </div>
               
-              <p style={{ color: colors.secondary, marginBottom: '20px' }}>
-                <strong>Fecha:</strong> {formatDate(selectedSale.date)}
-              </p>
+              <div style={{ 
+                background: colors.gray, 
+                padding: '12px', 
+                borderRadius: '8px',
+                marginBottom: '20px'
+              }}>
+                <p style={{ margin: '0 0 4px', color: colors.secondary, fontSize: '12px' }}>
+                  <strong>ID:</strong> #{selectedSale.id.toString().slice(-8)}
+                </p>
+                <p style={{ margin: 0, color: colors.secondary, fontSize: '12px' }}>
+                  <strong>Fecha:</strong> {formatDate(selectedSale.date)}
+                </p>
+              </div>
               
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '20px', maxHeight: '350px', overflowY: 'auto' }}>
                 {selectedSale.items.map((item, index) => (
                   <div key={index} style={{
                     padding: '12px 0',
-                    borderBottom: `1px solid ${colors.light}`,
+                    borderBottom: index < selectedSale.items.length - 1 ? `1px solid ${colors.light}` : 'none',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '12px'
                   }}>
                     <ProductImage product={item} />
                     <div style={{ flex: 1 }}>
-                      <strong>{item.name}</strong>
-                      <br />
-                      <small style={{ color: colors.secondary }}>
+                      <strong style={{ color: colors.primary }}>{item.name}</strong>
+                      <div style={{ fontSize: '11px', color: colors.secondary, marginTop: '2px' }}>
+                        {item.voltage && <span style={{ marginRight: '6px' }}>⚡{item.voltage}</span>}
+                        {item.amperage && <span style={{ marginRight: '6px' }}>🔌{item.amperage}</span>}
+                        {item.wattage && <span>💡{item.wattage}</span>}
+                      </div>
+                      <div style={{ fontSize: '12px', color: colors.secondary, marginTop: '2px' }}>
                         ${item.price.toFixed(2)} x {item.quantity}
-                      </small>
+                      </div>
                     </div>
                     <div style={{ fontWeight: 'bold', color: colors.primary }}>
-                      ${(item.price * item.quantity).toFixed(2)}
+                      ${(item.price * item.quantity).toLocaleString('es-ES', {minimumFractionDigits: 2})}
                     </div>
                   </div>
                 ))}
@@ -370,9 +575,9 @@ function Sales() {
                 fontSize: '18px',
                 fontWeight: 'bold'
               }}>
-                <span>Total:</span>
+                <span style={{ color: colors.primary }}>Total:</span>
                 <span style={{ color: '#10B981' }}>
-                  ${selectedSale.total.toFixed(2)}
+                  ${selectedSale.total.toLocaleString('es-ES', {minimumFractionDigits: 2})}
                 </span>
               </div>
             </div>
@@ -461,7 +666,7 @@ function Sales() {
                         fontWeight: 'bold'
                       }}
                     >
-                      -
+                      −
                     </button>
                     <span style={{ minWidth: '30px', textAlign: 'center' }}>{item.quantity}</span>
                     <button
