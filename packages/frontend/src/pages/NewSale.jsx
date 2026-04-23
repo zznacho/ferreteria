@@ -22,22 +22,28 @@ function NewSale() {
     loadProducts();
   }, []);
 
-  const loadProducts = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/products`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.filter(p => p.stock > 0));
-      }
-    } catch (error) {
-      console.error('Error cargando productos:', error);
-      const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-      setProducts(savedProducts.filter(p => p.stock > 0));
+const loadProducts = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/products`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      // Convertir price y stock a números
+      const formatted = data.map(p => ({
+        ...p,
+        price: Number(p.price),
+        stock: Number(p.stock)
+      }));
+      setProducts(formatted.filter(p => p.stock > 0));
     }
-  };
+  } catch (error) {
+    console.error('Error cargando productos:', error);
+    const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+    setProducts(savedProducts.filter(p => p.stock > 0));
+  }
+};
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,12 +147,12 @@ function NewSale() {
     navigate('/sales');
   };
 
-  const ProductImage = ({ product }) => {
-    if (product?.image) {
-      return <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px' }} />;
-    }
-    return <div style={{ width: '40px', height: '40px', background: colors.light, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.primary, fontSize: '16px' }}>📦</div>;
-  };
+const ProductImage = ({ product }) => {
+  if (product?.image_url || product?.image) {
+    return <img src={product.image_url || product.image} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px' }} />;
+  }
+  return <div style={{ width: '40px', height: '40px', background: colors.light, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.primary, fontSize: '16px' }}>📦</div>;
+};
 
   return (
     <div style={{ maxWidth: '100%', overflowX: 'hidden' }}>
@@ -244,7 +250,7 @@ function NewSale() {
                           {item.amperage && <span style={{ marginRight: '5px' }}>🔌{item.amperage}</span>}
                           {item.wattage && <span>💡{item.wattage}</span>}
                         </div>
-                        <span style={{ color: colors.secondary, fontSize: '12px' }}>${item.price.toFixed(2)} x {item.quantity}</span>
+                        <span style={{ color: colors.secondary, fontSize: '12px' }}>${Number(item.price).toFixed(2)} x {item.quantity}</span>
                       </div>
                       <div style={{ fontWeight: 'bold', color: colors.primary, fontSize: '14px', whiteSpace: 'nowrap' }}>${(item.price * item.quantity).toLocaleString('es-ES', {minimumFractionDigits: 2})}</div>
                     </div>
