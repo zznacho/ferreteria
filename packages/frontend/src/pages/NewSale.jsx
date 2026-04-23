@@ -70,15 +70,15 @@ const loadProducts = async () => {
       setCart(cart.filter(item => item.id !== product.id));
     } else if (currentQty === 0) {
       setCart([...cart, {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: newQty,
-        image: product.image,
-        voltage: product.voltage,
-        amperage: product.amperage,
-        wattage: product.wattage
-      }]);
+      id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      quantity: newQty,
+      image: product.image_url || product.image,
+      voltage: product.voltage,
+      amperage: product.amperage,
+      wattage: product.wattage
+    }]);
     } else {
       setCart(cart.map(item =>
         item.id === product.id ? { ...item, quantity: newQty } : item
@@ -86,9 +86,9 @@ const loadProducts = async () => {
     }
   };
 
-  const calculateTotal = () => {
-    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  };
+const calculateTotal = () => {
+  return cart.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+};
 
   const handleCompleteSale = async () => {
     if (cart.length === 0) {
@@ -252,7 +252,7 @@ const ProductImage = ({ product }) => {
                         </div>
                         <span style={{ color: colors.secondary, fontSize: '12px' }}>${Number(item.price).toFixed(2)} x {item.quantity}</span>
                       </div>
-                      <div style={{ fontWeight: 'bold', color: colors.primary, fontSize: '14px', whiteSpace: 'nowrap' }}>${(item.price * item.quantity).toLocaleString('es-ES', {minimumFractionDigits: 2})}</div>
+                      <div style={{ fontWeight: 'bold', color: colors.primary, fontSize: '14px', whiteSpace: 'nowrap' }}>${(Number(item.price) * item.quantity).toLocaleString('es-ES', {minimumFractionDigits: 2})}</div>
                     </div>
                   ))}
                 </div>
