@@ -1,298 +1,110 @@
 import React, { useState, useEffect } from 'react';
 
+const API_URL = 'http://localhost:3001/api';
+
 const colors = {
-  primary: '#263B6A',
-  secondary: '#6984A9',
-  accent: '#A0D585',
-  light: '#EEFABD',
-  white: '#FFFFFF',
-  gray: '#F8FAFC'
+  primary: '#263B6A', secondary: '#6984A9', accent: '#A0D585',
+  light: '#EEFABD', white: '#FFFFFF', gray: '#F8FAFC'
 };
 
 function Sales() {
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
   const [selectedSale, setSelectedSale] = useState(null);
-  const [editingSale, setEditingSale] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('date-desc');
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
-  const loadData = () => {
-    const savedSales = JSON.parse(localStorage.getItem('sales') || '[]');
-    const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    setSales(savedSales);
-    setProducts(savedProducts);
+  const loadData = async () => {
+    // Cargar ventas
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/sales`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSales(data);
+      }
+    } catch (error) {
+      const savedSales = JSON.parse(localStorage.getItem('sales') || '[]');
+      setSales(savedSales);
+    }
+    // Cargar productos
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/products`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data);
+      }
+    } catch (error) {
+      const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+      setProducts(savedProducts);
+    }
   };
 
-  const filteredAndSortedSales = () => {
+  const filteredSales = () => {
     let filtered = [...sales];
-    
-    // Filtrar por ID de venta o nombre de producto
     if (searchTerm) {
       filtered = filtered.filter(sale => 
-        sale.id.toString().includes(searchTerm) ||
-        sale.items.some(item => 
-          item.name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        sale.id?.toString().includes(searchTerm)
       );
     }
-    
-    // Ordenar
     switch (sortBy) {
-      case 'date-desc':
-        filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-        break;
-      case 'date-asc':
-        filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
-        break;
-      case 'total-desc':
-        filtered.sort((a, b) => b.total - a.total);
-        break;
-      case 'total-asc':
-        filtered.sort((a, b) => a.total - b.total);
-        break;
-      case 'items-desc':
-        filtered.sort((a, b) => b.items.length - a.items.length);
-        break;
-      default:
-        break;
+      case 'date-desc': filtered.sort((a, b) => new Date(b.date) - new Date(a.date)); break;
+      case 'date-asc': filtered.sort((a, b) => new Date(a.date) - new Date(b.date)); break;
+      case 'total-desc': filtered.sort((a, b) => (b.total_amount || b.total || 0) - (a.total_amount || a.total || 0)); break;
+      case 'total-asc': filtered.sort((a, b) => (a.total_amount || a.total || 0) - (b.total_amount || b.total || 0)); break;
+      default: break;
     }
-    
     return filtered;
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '-';
     const date = new Date(dateString);
-    return date.toLocaleString('es-ES', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return date.toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
   };
 
-  const formatShortDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit'
-    });
-  };
-
-  const handleDeleteSale = (saleId) => {
-    if (window.confirm('¿Estás seguro de eliminar esta venta? Se restaurará el stock de los productos.')) {
-      const saleToDelete = sales.find(s => s.id === saleId);
-      
-      const updatedProducts = products.map(product => {
-        const saleItem = saleToDelete.items.find(item => item.id === product.id);
-        if (saleItem) {
-          return { ...product, stock: product.stock + saleItem.quantity };
-        }
-        return product;
+  const handleDeleteSale = async (saleId) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta venta? Se restaurará el stock.')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${API_URL}/sales/${saleId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-      
-      const updatedSales = sales.filter(s => s.id !== saleId);
-      
-      localStorage.setItem('products', JSON.stringify(updatedProducts));
-      localStorage.setItem('sales', JSON.stringify(updatedSales));
-      
-      setProducts(updatedProducts);
-      setSales(updatedSales);
-      
-      if (selectedSale?.id === saleId) {
-        setSelectedSale(null);
-      }
-      
-      alert('✅ Venta eliminada y stock restaurado');
+    } catch (error) {
+      console.log('Eliminación offline');
     }
+    // Eliminar de localStorage también
+    const savedSales = JSON.parse(localStorage.getItem('sales') || '[]');
+    localStorage.setItem('sales', JSON.stringify(savedSales.filter(s => s.id !== saleId)));
+    setSales(sales.filter(s => s.id !== saleId));
+    setSelectedSale(null);
+    alert('✅ Venta eliminada');
   };
 
-  const handleEditSale = (sale) => {
-    setEditingSale({ 
-      ...sale, 
-      items: sale.items.map(item => ({ ...item })) 
-    });
-    setShowEditModal(true);
-  };
-
-  const handleUpdateSaleItem = (itemId, newQuantity) => {
-    const product = products.find(p => p.id === itemId);
-    const originalItem = editingSale.items.find(i => i.id === itemId);
-    
-    if (!product || !originalItem) return;
-    
-    const quantityDiff = newQuantity - originalItem.quantity;
-    
-    if (quantityDiff > 0 && product.stock < quantityDiff) {
-      alert('Stock insuficiente');
-      return;
-    }
-    
-    if (newQuantity <= 0) {
-      setEditingSale({
-        ...editingSale,
-        items: editingSale.items.filter(i => i.id !== itemId)
-      });
-    } else {
-      setEditingSale({
-        ...editingSale,
-        items: editingSale.items.map(i =>
-          i.id === itemId ? { ...i, quantity: newQuantity } : i
-        )
-      });
-    }
-  };
-
-  const handleAddItemToEdit = (productId) => {
-    const product = products.find(p => p.id.toString() === productId);
-    if (!product) return;
-    
-    const existingItem = editingSale.items.find(i => i.id === product.id);
-    if (existingItem) {
-      alert('El producto ya está en la venta');
-      return;
-    }
-    
-    if (product.stock < 1) {
-      alert('Stock insuficiente');
-      return;
-    }
-    
-    setEditingSale({
-      ...editingSale,
-      items: [...editingSale.items, {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-        image: product.image,
-        voltage: product.voltage,
-        amperage: product.amperage,
-        wattage: product.wattage
-      }]
-    });
-  };
-
-  const handleSaveEdit = () => {
-    if (editingSale.items.length === 0) {
-      alert('La venta debe tener al menos un producto');
-      return;
-    }
-    
-    const originalSale = sales.find(s => s.id === editingSale.id);
-    
-    const updatedProducts = products.map(product => {
-      const originalItem = originalSale.items.find(i => i.id === product.id);
-      const newItem = editingSale.items.find(i => i.id === product.id);
-      
-      if (originalItem && !newItem) {
-        return { ...product, stock: product.stock + originalItem.quantity };
-      } else if (!originalItem && newItem) {
-        return { ...product, stock: product.stock - newItem.quantity };
-      } else if (originalItem && newItem) {
-        const diff = originalItem.quantity - newItem.quantity;
-        return { ...product, stock: product.stock + diff };
-      }
-      return product;
-    });
-    
-    const updatedSale = {
-      ...editingSale,
-      total: editingSale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-      updated_at: new Date().toISOString()
-    };
-    
-    const updatedSales = sales.map(s => s.id === editingSale.id ? updatedSale : s);
-    
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
-    localStorage.setItem('sales', JSON.stringify(updatedSales));
-    
-    setProducts(updatedProducts);
-    setSales(updatedSales);
-    setShowEditModal(false);
-    setEditingSale(null);
-    
-    if (selectedSale?.id === editingSale.id) {
-      setSelectedSale(updatedSale);
-    }
-    
-    alert('✅ Venta actualizada correctamente');
-  };
-
-  const ProductImage = ({ product }) => {
-    if (product?.image) {
-      return (
-        <img 
-          src={product.image} 
-          alt={product.name}
-          style={{
-            width: '40px',
-            height: '40px',
-            objectFit: 'cover',
-            borderRadius: '6px'
-          }}
-        />
-      );
-    }
-    return (
-      <div style={{
-        width: '40px',
-        height: '40px',
-        background: colors.light,
-        borderRadius: '6px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: colors.primary,
-        fontSize: '16px'
-      }}>
-        📦
-      </div>
-    );
-  };
-
-  const filteredSales = filteredAndSortedSales();
-  
-  // Calcular estadísticas
-  const totalSales = filteredSales.length;
-  const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalItems = filteredSales.reduce((sum, sale) => sum + sale.items.reduce((s, i) => s + i.quantity, 0), 0);
-  const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
+  const filtered = filteredSales();
+  const totalRevenue = filtered.reduce((sum, s) => sum + (s.total_amount || s.total || 0), 0);
+  const totalItems = filtered.reduce((sum, s) => sum + (s.total_items || s.items?.length || 0), 0);
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '30px'
-      }}>
-        <h1 style={{ color: colors.primary }}>📈 Historial de Ventas</h1>
-      </div>
+    <div style={{ maxWidth: '100%', overflowX: 'hidden' }}>
+      <h1 style={{ color: colors.primary, marginBottom: '20px' }}>📈 Historial de Ventas</h1>
 
-      {/* Estadísticas */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '15px',
-        marginBottom: '20px'
-      }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', marginBottom: '20px' }}>
         <div style={{ background: colors.white, padding: '16px', borderRadius: '12px', border: `1px solid ${colors.light}` }}>
           <p style={{ margin: 0, color: colors.secondary, fontSize: '12px', textTransform: 'uppercase' }}>Total Ventas</p>
-          <p style={{ margin: '5px 0 0', fontSize: '24px', fontWeight: '700', color: colors.primary }}>{totalSales}</p>
+          <p style={{ margin: '5px 0 0', fontSize: '24px', fontWeight: '700', color: colors.primary }}>{filtered.length}</p>
         </div>
         <div style={{ background: colors.white, padding: '16px', borderRadius: '12px', border: `1px solid ${colors.light}` }}>
           <p style={{ margin: 0, color: colors.secondary, fontSize: '12px', textTransform: 'uppercase' }}>Ingresos Totales</p>
-          <p style={{ margin: '5px 0 0', fontSize: '24px', fontWeight: '700', color: '#10B981' }}>
-            ${totalRevenue.toLocaleString('es-ES', {minimumFractionDigits: 2})}
-          </p>
+          <p style={{ margin: '5px 0 0', fontSize: '24px', fontWeight: '700', color: '#10B981' }}>${totalRevenue.toLocaleString('es-ES', {minimumFractionDigits: 2})}</p>
         </div>
         <div style={{ background: colors.white, padding: '16px', borderRadius: '12px', border: `1px solid ${colors.light}` }}>
           <p style={{ margin: 0, color: colors.secondary, fontSize: '12px', textTransform: 'uppercase' }}>Productos Vendidos</p>
@@ -300,451 +112,55 @@ function Sales() {
         </div>
         <div style={{ background: colors.white, padding: '16px', borderRadius: '12px', border: `1px solid ${colors.light}` }}>
           <p style={{ margin: 0, color: colors.secondary, fontSize: '12px', textTransform: 'uppercase' }}>Ticket Promedio</p>
-          <p style={{ margin: '5px 0 0', fontSize: '24px', fontWeight: '700', color: colors.accent }}>
-            ${averageTicket.toLocaleString('es-ES', {minimumFractionDigits: 2})}
-          </p>
+          <p style={{ margin: '5px 0 0', fontSize: '24px', fontWeight: '700', color: colors.accent }}>${filtered.length > 0 ? (totalRevenue / filtered.length).toLocaleString('es-ES', {minimumFractionDigits: 2}) : '0.00'}</p>
         </div>
       </div>
 
-      {/* Filtros */}
-      <div style={{
-        background: 'white',
-        padding: '20px',
-        borderRadius: '12px',
-        marginBottom: '20px',
-        border: `1px solid ${colors.light}`
-      }}>
-        {/* Barra de búsqueda - Fila completa */}
-        <div style={{ position: 'relative', marginBottom: '15px' }}>
-          <input
-            type="text"
-            placeholder="🔍 Buscar por ID de venta o nombre de producto..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 40px 12px 12px',
-              border: `2px solid ${colors.light}`,
-              borderRadius: '8px',
-              fontSize: '14px',
-              outline: 'none',
-              background: 'white',
-              boxSizing: 'border-box'
-            }}
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                fontSize: '20px',
-                cursor: 'pointer',
-                color: colors.secondary
-              }}
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Selector de ordenamiento - Segunda fila */}
+      <div style={{ background: 'white', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: `1px solid ${colors.light}` }}>
         <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            style={{
-              flex: '1',
-              minWidth: '200px',
-              padding: '12px',
-              border: `2px solid ${colors.light}`,
-              borderRadius: '8px',
-              fontSize: '14px',
-              outline: 'none',
-              background: 'white',
-              cursor: 'pointer'
-            }}
-          >
+          <input type="text" placeholder="🔍 Buscar por ID de venta..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ flex: '2', minWidth: '200px', padding: '12px', border: `2px solid ${colors.light}`, borderRadius: '8px', fontSize: '14px', outline: 'none' }} />
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
+            style={{ flex: '1', minWidth: '180px', padding: '12px', border: `2px solid ${colors.light}`, borderRadius: '8px', fontSize: '14px', outline: 'none', cursor: 'pointer' }}>
             <option value="date-desc">📅 Fecha (Más reciente)</option>
             <option value="date-asc">📅 Fecha (Más antigua)</option>
             <option value="total-desc">💰 Total (Mayor a Menor)</option>
             <option value="total-asc">💰 Total (Menor a Mayor)</option>
-            <option value="items-desc">📦 Items (Mayor a Menor)</option>
           </select>
         </div>
-        
-        {/* Mensaje de resultados */}
-        {searchTerm && (
-          <div style={{ marginTop: '15px', color: colors.secondary, fontSize: '13px' }}>
-            <strong>{filteredSales.length}</strong> venta(s) encontrada(s)
-          </div>
-        )}
       </div>
 
-      {/* Tabla de ventas */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: selectedSale ? '1fr 400px' : '1fr', 
-        gap: '20px' 
-      }}>
-        <div>
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            overflow: 'auto',
-            border: `1px solid ${colors.light}`
-          }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
-              <thead>
-                <tr style={{ background: colors.primary, color: 'white' }}>
-                  <th style={{ padding: '12px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>ID Venta</th>
-                  <th style={{ padding: '12px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>Fecha</th>
-                  <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: '600' }}>Items</th>
-                  <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: '600' }}>Total</th>
-                  <th style={{ padding: '12px', textAlign: 'center', fontSize: '13px', fontWeight: '600' }}>Acciones</th>
+      <div style={{ background: 'white', borderRadius: '12px', overflow: 'auto', border: `1px solid ${colors.light}` }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+          <thead>
+            <tr style={{ background: colors.primary, color: 'white' }}>
+              <th style={{ padding: '12px', textAlign: 'left' }}>ID</th>
+              <th style={{ padding: '12px', textAlign: 'left' }}>Fecha</th>
+              <th style={{ padding: '12px', textAlign: 'center' }}>Items</th>
+              <th style={{ padding: '12px', textAlign: 'right' }}>Total</th>
+              <th style={{ padding: '12px', textAlign: 'center' }}>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>No hay ventas registradas</td></tr>
+            ) : (
+              filtered.map(sale => (
+                <tr key={sale.id} style={{ borderBottom: `1px solid ${colors.light}` }}>
+                  <td style={{ padding: '12px', color: colors.secondary, fontSize: '12px' }}>#{String(sale.id).slice(-8)}</td>
+                  <td style={{ padding: '12px', fontWeight: '600', color: colors.primary }}>{formatDate(sale.date)}</td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}><span style={{ background: colors.light, padding: '4px 8px', borderRadius: '12px', fontSize: '12px', color: colors.primary, fontWeight: '600' }}>{sale.total_items || sale.items?.length || 0} items</span></td>
+                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: '#10B981' }}>${(sale.total_amount || sale.total || 0).toLocaleString('es-ES', {minimumFractionDigits: 2})}</td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <button onClick={() => handleDeleteSale(sale.id)}
+                      style={{ padding: '6px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>🗑️</button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredSales.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
-                      {searchTerm ? 'No se encontraron ventas' : 'No hay ventas registradas'}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredSales.map(sale => (
-                    <tr key={sale.id} style={{ borderBottom: `1px solid ${colors.light}` }}>
-                      <td style={{ padding: '12px', color: colors.secondary, fontSize: '12px' }}>
-                        #{sale.id.toString().slice(-8)}
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        <div style={{ fontWeight: '600', color: colors.primary }}>{formatShortDate(sale.date)}</div>
-                        <div style={{ fontSize: '11px', color: colors.secondary }}>
-                          {new Date(sale.date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <span style={{ 
-                          background: colors.light, 
-                          padding: '4px 8px', 
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          color: colors.primary,
-                          fontWeight: '600'
-                        }}>
-                          {sale.items.length} {sale.items.length === 1 ? 'producto' : 'productos'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: '#10B981' }}>
-                        ${sale.total.toLocaleString('es-ES', {minimumFractionDigits: 2})}
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <button
-                          onClick={() => setSelectedSale(selectedSale?.id === sale.id ? null : sale)}
-                          style={{
-                            marginRight: '8px',
-                            padding: '6px 12px',
-                            background: colors.secondary,
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          {selectedSale?.id === sale.id ? 'Ocultar' : 'Ver'}
-                        </button>
-                        <button
-                          onClick={() => handleEditSale(sale)}
-                          style={{
-                            marginRight: '8px',
-                            padding: '6px 10px',
-                            background: colors.accent,
-                            color: colors.primary,
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            fontSize: '12px'
-                          }}
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSale(sale.id)}
-                          style={{
-                            padding: '6px 10px',
-                            background: '#EF4444',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          🗑️
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Detalle de venta */}
-        {selectedSale && (
-          <div>
-            <div style={{
-              background: 'white',
-              padding: '24px',
-              borderRadius: '12px',
-              border: `1px solid ${colors.light}`,
-              position: 'sticky',
-              top: '20px'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                marginBottom: '20px'
-              }}>
-                <h3 style={{ color: colors.primary, margin: 0 }}>Detalle de Venta</h3>
-                <button
-                  onClick={() => setSelectedSale(null)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '20px',
-                    cursor: 'pointer',
-                    color: colors.secondary
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <div style={{ 
-                background: colors.gray, 
-                padding: '12px', 
-                borderRadius: '8px',
-                marginBottom: '20px'
-              }}>
-                <p style={{ margin: '0 0 4px', color: colors.secondary, fontSize: '12px' }}>
-                  <strong>ID:</strong> #{selectedSale.id.toString().slice(-8)}
-                </p>
-                <p style={{ margin: 0, color: colors.secondary, fontSize: '12px' }}>
-                  <strong>Fecha:</strong> {formatDate(selectedSale.date)}
-                </p>
-              </div>
-              
-              <div style={{ marginBottom: '20px', maxHeight: '350px', overflowY: 'auto' }}>
-                {selectedSale.items.map((item, index) => (
-                  <div key={index} style={{
-                    padding: '12px 0',
-                    borderBottom: index < selectedSale.items.length - 1 ? `1px solid ${colors.light}` : 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px'
-                  }}>
-                    <ProductImage product={item} />
-                    <div style={{ flex: 1 }}>
-                      <strong style={{ color: colors.primary }}>{item.name}</strong>
-                      <div style={{ fontSize: '11px', color: colors.secondary, marginTop: '2px' }}>
-                        {item.voltage && <span style={{ marginRight: '6px' }}>⚡{item.voltage}</span>}
-                        {item.amperage && <span style={{ marginRight: '6px' }}>🔌{item.amperage}</span>}
-                        {item.wattage && <span>💡{item.wattage}</span>}
-                      </div>
-                      <div style={{ fontSize: '12px', color: colors.secondary, marginTop: '2px' }}>
-                        ${item.price.toFixed(2)} x {item.quantity}
-                      </div>
-                    </div>
-                    <div style={{ fontWeight: 'bold', color: colors.primary }}>
-                      ${(item.price * item.quantity).toLocaleString('es-ES', {minimumFractionDigits: 2})}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div style={{
-                borderTop: `2px solid ${colors.light}`,
-                paddingTop: '15px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '18px',
-                fontWeight: 'bold'
-              }}>
-                <span style={{ color: colors.primary }}>Total:</span>
-                <span style={{ color: '#10B981' }}>
-                  ${selectedSale.total.toLocaleString('es-ES', {minimumFractionDigits: 2})}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
-
-      {/* Modal de Edición */}
-      {showEditModal && editingSale && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            padding: '30px',
-            width: '90%',
-            maxWidth: '700px',
-            maxHeight: '80vh',
-            overflow: 'auto'
-          }}>
-            <h2 style={{ marginBottom: '20px', color: colors.primary }}>✏️ Editar Venta</h2>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: colors.primary, fontWeight: '600' }}>
-                Agregar Producto
-              </label>
-              <select
-                onChange={(e) => handleAddItemToEdit(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: `2px solid ${colors.light}`,
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}
-              >
-                <option value="">Seleccionar producto...</option>
-                {products.filter(p => 
-                  !editingSale.items.find(i => i.id === p.id) && p.stock > 0
-                ).map(product => (
-                  <option key={product.id} value={product.id}>
-                    {product.name} - ${product.price} (Stock: {product.stock})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <h3 style={{ marginBottom: '15px', color: colors.primary }}>Productos en la venta</h3>
-              {editingSale.items.map(item => (
-                <div key={item.id} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px',
-                  background: colors.gray,
-                  borderRadius: '8px',
-                  marginBottom: '8px'
-                }}>
-                  <ProductImage product={item} />
-                  <div style={{ flex: 1 }}>
-                    <strong>{item.name}</strong>
-                    <br />
-                    <small style={{ color: colors.secondary }}>${item.price.toFixed(2)} c/u</small>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button
-                      onClick={() => handleUpdateSaleItem(item.id, item.quantity - 1)}
-                      style={{
-                        width: '30px',
-                        height: '30px',
-                        background: colors.light,
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      −
-                    </button>
-                    <span style={{ minWidth: '30px', textAlign: 'center' }}>{item.quantity}</span>
-                    <button
-                      onClick={() => handleUpdateSaleItem(item.id, item.quantity + 1)}
-                      style={{
-                        width: '30px',
-                        height: '30px',
-                        background: colors.light,
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div style={{ fontWeight: 'bold', color: colors.primary, minWidth: '80px', textAlign: 'right' }}>
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{
-              borderTop: `2px solid ${colors.light}`,
-              paddingTop: '15px',
-              marginBottom: '20px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: '18px',
-              fontWeight: 'bold'
-            }}>
-              <span>Total:</span>
-              <span style={{ color: '#10B981' }}>
-                ${editingSale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingSale(null);
-                }}
-                style={{
-                  padding: '10px 20px',
-                  background: colors.secondary,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                style={{
-                  padding: '10px 20px',
-                  background: colors.primary,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: '600'
-                }}
-              >
-                Guardar Cambios
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
