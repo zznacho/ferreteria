@@ -141,7 +141,14 @@ function NewSale() {
 
   return (
     <div style={{ maxWidth: '100%', overflowX: 'hidden' }}>
-      <h1 style={{ marginBottom: '20px', color: colors.primary, fontSize: '24px' }}>🛒 Nueva Venta</h1>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '30px'
+      }}>
+      <h1 style={{ color: colors.primary }}>🛒 Nueva Venta</h1>
+      </div>
 
       <div style={{ 
         display: 'grid', 
@@ -186,16 +193,15 @@ function NewSale() {
               onBlur={(e) => e.target.style.borderColor = colors.light}
             />
 
-            <div style={{ maxHeight: '500px', overflowY: 'auto', overflowX: 'auto' }}>
+            <div style={{ background: 'white',
+  borderRadius: '12px',
+  overflowX: 'auto',
+  overflowY: 'visible',
+  border: `1px solid ${colors.light}`,
+  maxWidth: '100%' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '650px' }}>
                 <thead>
-                  <tr style={{ 
-                    background: colors.primary, 
-                    color: 'white',
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 10
-                  }}>
+                  <tr style={{ background: colors.primary, color: 'white' }}>
                     <th style={{ padding: '10px 6px', textAlign: 'left', fontSize: '12px', fontWeight: '600' }}></th>
                     <th style={{ padding: '10px 6px', textAlign: 'left', fontSize: '12px', fontWeight: '600' }}>Producto</th>
                     <th style={{ padding: '10px 6px', textAlign: 'left', fontSize: '12px', fontWeight: '600' }}>Especificaciones</th>
