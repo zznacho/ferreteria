@@ -363,49 +363,66 @@ function Products() {
         marginBottom: '20px',
         border: `1px solid ${colors.light}`
       }}>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 200px auto', 
-          gap: '15px',
-          alignItems: 'center'
-        }}>
-          <div style={{ position: 'relative' }}>
-            <input
-              type="text"
-              placeholder="🔍 Buscar por nombre, marca o descripción..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+        {/* Barra de búsqueda - Fila completa */}
+        <div style={{ position: 'relative', marginBottom: '15px' }}>
+          <input
+            type="text"
+            placeholder="🔍 Buscar por nombre, marca o descripción..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 40px 12px 12px',
+              border: `2px solid ${colors.light}`,
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none',
+              background: 'white',
+              boxSizing: 'border-box'
+            }}
+            onFocus={(e) => e.target.style.borderColor = colors.accent}
+            onBlur={(e) => e.target.style.borderColor = colors.light}
+          />
+          {searchTerm && (
+            <button
+              onClick={clearSearch}
               style={{
-                ...inputStyle,
-                padding: '12px 40px 12px 12px'
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                fontSize: '20px',
+                cursor: 'pointer',
+                color: colors.secondary
               }}
-              onFocus={(e) => e.target.style.borderColor = colors.accent}
-              onBlur={(e) => e.target.style.borderColor = colors.light}
-            />
-            {searchTerm && (
-              <button
-                onClick={clearSearch}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                  color: colors.secondary
-                }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
+            >
+              ✕
+            </button>
+          )}
+        </div>
 
+        {/* Selectores - Segunda fila */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px',
+          flexWrap: 'wrap'
+        }}>
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            style={selectStyle}
+            style={{
+              flex: '1',
+              minWidth: '180px',
+              padding: '10px',
+              border: `2px solid ${colors.light}`,
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none',
+              background: 'white',
+              cursor: 'pointer'
+            }}
           >
             <option value="">Todas las categorías</option>
             {CATEGORIES.map(cat => (
@@ -416,7 +433,17 @@ function Products() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            style={{ ...selectStyle, width: '200px' }}
+            style={{
+              flex: '1',
+              minWidth: '200px',
+              padding: '10px',
+              border: `2px solid ${colors.light}`,
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none',
+              background: 'white',
+              cursor: 'pointer'
+            }}
           >
             <option value="name">📝 Nombre (A-Z)</option>
             <option value="price-asc">💰 Precio (Menor a Mayor)</option>
@@ -426,6 +453,7 @@ function Products() {
           </select>
         </div>
 
+        {/* Chips de filtros activos */}
         {(searchTerm || selectedCategory) && (
           <div style={{ marginTop: '15px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ color: colors.secondary, fontSize: '13px' }}>Filtros activos:</span>
