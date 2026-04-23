@@ -61,9 +61,14 @@ function Products() {
       });
       if (response.ok) {
         const data = await response.json();
-        setProducts(data);
+        // Convertir price y stock a números
+        const formatted = data.map(p => ({
+          ...p,
+          price: Number(p.price),
+          stock: Number(p.stock)
+        }));
+        setProducts(formatted);
       } else {
-        // Fallback a localStorage
         const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
         setProducts(savedProducts);
       }
@@ -76,7 +81,6 @@ function Products() {
     }
   };
 
-  // Cargar marcas desde localStorage
   const loadBrands = () => {
     const savedBrands = JSON.parse(localStorage.getItem('brands') || '[]');
     setBrands(savedBrands);
@@ -137,7 +141,6 @@ function Products() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Guardar producto (intenta backend, fallback a localStorage)
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.brand) saveBrand(formData.brand);
@@ -161,7 +164,7 @@ function Products() {
       updated_at: new Date().toISOString()
     };
 
-    // Guardar siempre en localStorage (offline-first)
+    // Guardar en localStorage (offline-first)
     let updatedProducts;
     if (editingProduct) {
       updatedProducts = products.map(p => p.id === editingProduct.id ? productData : p);
@@ -171,7 +174,7 @@ function Products() {
     localStorage.setItem('products', JSON.stringify(updatedProducts));
     setProducts(updatedProducts);
 
-    // Intentar guardar en el backend
+    // Intentar guardar en backend
     try {
       const token = localStorage.getItem('token');
       const method = editingProduct ? 'PUT' : 'POST';
@@ -259,7 +262,7 @@ function Products() {
   const selectStyle = { width: '100%', padding: '10px', border: `2px solid ${colors.light}`, borderRadius: '8px', fontSize: '14px', outline: 'none', background: 'white', cursor: 'pointer' };
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '60px', color: colors.secondary }}>Cargando productos...</div>;
+    return <div style={{ textAlign: 'center', padding: '60px', color: colors.secondary, fontSize: '18px' }}>⏳ Cargando productos...</div>;
   }
 
   return (
@@ -424,14 +427,14 @@ function Products() {
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px', tableLayout: 'auto' }}>
           <thead>
             <tr style={{ background: colors.primary, color: 'white' }}>
-              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', whiteSpace: 'nowrap' }}></th>
-              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', whiteSpace: 'nowrap' }}>Producto</th>
-              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', whiteSpace: 'nowrap' }}>Categoría</th>
-              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', whiteSpace: 'nowrap' }}>Marca</th>
-              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', whiteSpace: 'nowrap' }}>Especificaciones</th>
-              <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '13px', whiteSpace: 'nowrap' }}>Precio</th>
-              <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '13px', whiteSpace: 'nowrap' }}>Stock</th>
-              <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '13px', whiteSpace: 'nowrap' }}>Acciones</th>
+              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px' }}></th>
+              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px' }}>Producto</th>
+              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px' }}>Categoría</th>
+              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px' }}>Marca</th>
+              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px' }}>Especificaciones</th>
+              <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '13px' }}>Precio</th>
+              <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '13px' }}>Stock</th>
+              <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '13px' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -474,7 +477,7 @@ function Products() {
         </div>
       )}
 
-      {/* Modal Ver - igual que antes */}
+      {/* Modal Ver */}
       {showViewModal && viewingProduct && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}
           onClick={() => setShowViewModal(false)}>
