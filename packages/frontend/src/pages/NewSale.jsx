@@ -26,7 +26,9 @@ function NewSale() {
   };
 
   const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.category && p.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (p.brand && p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const getCartQuantity = (productId) => {
@@ -52,7 +54,10 @@ function NewSale() {
         name: product.name,
         price: product.price,
         quantity: newQty,
-        image: product.image
+        image: product.image,
+        voltage: product.voltage,
+        amperage: product.amperage,
+        wattage: product.wattage
       }]);
     } else {
       setCart(cart.map(item =>
@@ -158,7 +163,7 @@ function NewSale() {
             
             <input
               type="text"
-              placeholder="🔍 Buscar producto..."
+              placeholder="🔍 Buscar por nombre, categoría o marca..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -177,18 +182,26 @@ function NewSale() {
 
             <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                {/* THEAD con mismo estilo que las otras pestañas */}
                 <thead>
-                  <tr style={{ borderBottom: `2px solid ${colors.light}` }}>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', color: colors.secondary, fontSize: '13px' }}></th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', color: colors.secondary, fontSize: '13px' }}>Producto</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'right', color: colors.secondary, fontSize: '13px' }}>Precio</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'center', color: colors.secondary, fontSize: '13px' }}>Cantidad</th>
+                  <tr style={{ 
+                    background: colors.primary, 
+                    color: 'white',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 10
+                  }}>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}></th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>Producto</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '13px', fontWeight: '600' }}>Especificaciones</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '13px', fontWeight: '600' }}>Precio</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '13px', fontWeight: '600' }}>Cantidad</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredProducts.length === 0 ? (
                     <tr>
-                      <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
+                      <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
                         {searchTerm ? 'No se encontraron productos' : 'No hay productos disponibles'}
                       </td>
                     </tr>
@@ -203,9 +216,25 @@ function NewSale() {
                           <td style={{ padding: '10px 8px' }}>
                             <strong style={{ color: colors.primary }}>{product.name}</strong>
                             <div style={{ fontSize: '12px', color: colors.secondary, marginTop: '2px' }}>
-                              Stock: {product.stock}
-                              {product.voltage && ` • ${product.voltage}`}
+                              {product.category && <span style={{ marginRight: '8px' }}>📁 {product.category}</span>}
+                              {product.brand && <span>🏷️ {product.brand}</span>}
                             </div>
+                            <div style={{ fontSize: '11px', color: colors.secondary, marginTop: '2px' }}>
+                              Stock: <span style={{ 
+                                color: product.stock < 5 ? '#EF4444' : '#10B981',
+                                fontWeight: '600'
+                              }}>{product.stock}</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '10px 8px', fontSize: '11px', color: colors.secondary }}>
+                            {product.voltage && <div>⚡ {product.voltage}</div>}
+                            {product.amperage && <div>🔌 {product.amperage}</div>}
+                            {product.wattage && <div>💡 {product.wattage}</div>}
+                            {product.weight && <div>⚖️ {product.weight}</div>}
+                            {product.measure && <div>📏 {product.measure}</div>}
+                            {!product.voltage && !product.amperage && !product.wattage && !product.weight && !product.measure && (
+                              <span style={{ opacity: 0.5 }}>-</span>
+                            )}
                           </td>
                           <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: '600', color: colors.primary }}>
                             ${product.price.toLocaleString('es-ES', {minimumFractionDigits: 2})}
@@ -215,7 +244,7 @@ function NewSale() {
                               display: 'flex', 
                               alignItems: 'center', 
                               justifyContent: 'center', 
-                              gap: '12px',
+                              gap: '8px',
                               background: colors.gray,
                               padding: '4px 8px',
                               borderRadius: '20px'
@@ -230,7 +259,7 @@ function NewSale() {
                                   border: 'none',
                                   background: quantity === 0 ? '#E5E7EB' : colors.accent,
                                   color: quantity === 0 ? '#9CA3AF' : colors.primary,
-                                  fontSize: '20px',
+                                  fontSize: '18px',
                                   fontWeight: 'bold',
                                   cursor: quantity === 0 ? 'not-allowed' : 'pointer',
                                   display: 'flex',
@@ -241,10 +270,10 @@ function NewSale() {
                                 −
                               </button>
                               <span style={{ 
-                                minWidth: '30px', 
+                                minWidth: '24px', 
                                 textAlign: 'center',
                                 fontWeight: '600',
-                                fontSize: '16px',
+                                fontSize: '14px',
                                 color: quantity > 0 ? colors.primary : colors.secondary
                               }}>
                                 {quantity}
@@ -259,7 +288,7 @@ function NewSale() {
                                   border: 'none',
                                   background: quantity >= product.stock ? '#E5E7EB' : colors.accent,
                                   color: quantity >= product.stock ? '#9CA3AF' : colors.primary,
-                                  fontSize: '20px',
+                                  fontSize: '18px',
                                   fontWeight: 'bold',
                                   cursor: quantity >= product.stock ? 'not-allowed' : 'pointer',
                                   display: 'flex',
@@ -340,6 +369,11 @@ function NewSale() {
                       <ProductImage product={item} />
                       <div style={{ flex: 1 }}>
                         <strong style={{ color: colors.primary, fontSize: '14px' }}>{item.name}</strong>
+                        <div style={{ fontSize: '11px', color: colors.secondary, marginTop: '2px' }}>
+                          {item.voltage && <span style={{ marginRight: '6px' }}>⚡{item.voltage}</span>}
+                          {item.amperage && <span style={{ marginRight: '6px' }}>🔌{item.amperage}</span>}
+                          {item.wattage && <span>💡{item.wattage}</span>}
+                        </div>
                         <div style={{ 
                           display: 'flex', 
                           justifyContent: 'space-between',
