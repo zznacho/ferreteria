@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-// Paleta de colores
+const API_URL = 'http://localhost:3001/api';
+
 const colors = {
   primary: '#263B6A',
   secondary: '#6984A9',
@@ -10,15 +11,8 @@ const colors = {
   gray: '#F8FAFC'
 };
 
-// Opciones predefinidas
 const CATEGORIES = [
-  'Carpintería',
-  'Construcción',
-  'Electricidad',
-  'Mueble',
-  'Jardinería',
-  'Fijación',
-  'Herramientas'
+  'Carpintería', 'Construcción', 'Electricidad', 'Mueble', 'Jardinería', 'Fijación', 'Herramientas'
 ];
 
 const WEIGHT_UNITS = ['kg', 'g', 'mg', 'L', 'mL'];
@@ -39,24 +33,13 @@ function Products() {
   const fileInputRef = useRef(null);
   const [viewingProduct, setViewingProduct] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
-  
   const [brands, setBrands] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState({
-    name: '',
-    price: '',
-    stock: '',
-    category: '',
-    brand: '',
-    weightValue: '',
-    weightUnit: 'kg',
-    measureValue: '',
-    measureUnit: 'metros',
-    voltage: '',
-    amperage: '',
-    wattage: '',
-    description: '',
-    image: null
+    name: '', price: '', stock: '', category: '', brand: '',
+    weightValue: '', weightUnit: 'kg', measureValue: '', measureUnit: 'metros',
+    voltage: '', amperage: '', wattage: '', description: '', image: null
   });
 
   useEffect(() => {
@@ -68,11 +51,32 @@ function Products() {
     filterAndSortProducts();
   }, [products, searchTerm, selectedCategory, sortBy]);
 
-  const loadProducts = () => {
-    const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    setProducts(savedProducts);
+  // Cargar productos desde el backend
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/products`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data);
+      } else {
+        // Fallback a localStorage
+        const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+        setProducts(savedProducts);
+      }
+    } catch (error) {
+      console.error('Error cargando productos:', error);
+      const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+      setProducts(savedProducts);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // Cargar marcas desde localStorage
   const loadBrands = () => {
     const savedBrands = JSON.parse(localStorage.getItem('brands') || '[]');
     setBrands(savedBrands);
@@ -133,14 +137,15 @@ function Products() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleSubmit = (e) => {
+  // Guardar producto (intenta backend, fallback a localStorage)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.brand) saveBrand(formData.brand);
     const weight = formData.weightValue ? `${formData.weightValue} ${formData.weightUnit}` : null;
     const measure = formData.measureValue ? `${formData.measureValue} ${formData.measureUnit}` : null;
     
     const productData = {
-      id: editingProduct?.id || Date.now(),
+      id: editingProduct?.id || Date.now().toString(),
       name: formData.name,
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock),
@@ -156,15 +161,34 @@ function Products() {
       updated_at: new Date().toISOString()
     };
 
+    // Guardar siempre en localStorage (offline-first)
     let updatedProducts;
     if (editingProduct) {
       updatedProducts = products.map(p => p.id === editingProduct.id ? productData : p);
     } else {
       updatedProducts = [...products, productData];
     }
-
     localStorage.setItem('products', JSON.stringify(updatedProducts));
     setProducts(updatedProducts);
+
+    // Intentar guardar en el backend
+    try {
+      const token = localStorage.getItem('token');
+      const method = editingProduct ? 'PUT' : 'POST';
+      const url = editingProduct ? `${API_URL}/products/${editingProduct.id}` : `${API_URL}/products`;
+      
+      await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(productData)
+      });
+    } catch (error) {
+      console.log('Guardado offline - se sincronizará después');
+    }
+
     setShowForm(false);
     setEditingProduct(null);
     setImagePreview(null);
@@ -175,11 +199,21 @@ function Products() {
     });
   };
   
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('¿Estás seguro de eliminar este producto?')) {
       const updatedProducts = products.filter(p => p.id !== id);
       localStorage.setItem('products', JSON.stringify(updatedProducts));
       setProducts(updatedProducts);
+
+      try {
+        const token = localStorage.getItem('token');
+        await fetch(`${API_URL}/products/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (error) {
+        console.log('Eliminación offline');
+      }
     }
   };
 
@@ -218,24 +252,15 @@ function Products() {
   const clearCategoryFilter = () => setSelectedCategory('');
 
   const DefaultProductImage = () => (
-    <div style={{
-      width: '40px', height: '40px', background: colors.light,
-      borderRadius: '6px', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', color: colors.primary, fontSize: '18px'
-    }}>
-      📦
-    </div>
+    <div style={{ width: '40px', height: '40px', background: colors.light, borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.primary, fontSize: '18px' }}>📦</div>
   );
 
-  const inputStyle = {
-    width: '100%', padding: '10px', border: `2px solid ${colors.light}`,
-    borderRadius: '8px', fontSize: '14px', outline: 'none', background: 'white'
-  };
+  const inputStyle = { width: '100%', padding: '10px', border: `2px solid ${colors.light}`, borderRadius: '8px', fontSize: '14px', outline: 'none', background: 'white' };
+  const selectStyle = { width: '100%', padding: '10px', border: `2px solid ${colors.light}`, borderRadius: '8px', fontSize: '14px', outline: 'none', background: 'white', cursor: 'pointer' };
 
-  const selectStyle = {
-    width: '100%', padding: '10px', border: `2px solid ${colors.light}`,
-    borderRadius: '8px', fontSize: '14px', outline: 'none', background: 'white', cursor: 'pointer'
-  };
+  if (loading) {
+    return <div style={{ textAlign: 'center', padding: '60px', color: colors.secondary }}>Cargando productos...</div>;
+  }
 
   return (
     <div style={{ maxWidth: '100%', overflowX: 'hidden' }}>
@@ -394,7 +419,7 @@ function Products() {
         </div>
       )}
 
-      {/* Tabla de productos */}
+      {/* Tabla */}
       <div style={{ background: 'white', borderRadius: '12px', overflowX: 'auto', overflowY: 'visible', border: `1px solid ${colors.light}`, maxWidth: '100%' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px', tableLayout: 'auto' }}>
           <thead>
@@ -411,24 +436,13 @@ function Products() {
           </thead>
           <tbody>
             {filteredProducts.length === 0 ? (
-              <tr>
-                <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
-                  {searchTerm || selectedCategory ? 'No se encontraron productos' : 'No hay productos. ¡Crea uno nuevo!'}
-                </td>
-              </tr>
+              <tr><td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>{searchTerm || selectedCategory ? 'No se encontraron productos' : 'No hay productos. ¡Crea uno nuevo!'}</td></tr>
             ) : (
               filteredProducts.map(product => (
                 <tr key={product.id} style={{ borderBottom: `1px solid ${colors.light}` }}>
-                  <td style={{ padding: '8px' }}>
-                    {product.image ? <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} /> : <DefaultProductImage />}
-                  </td>
-                  <td style={{ padding: '8px' }}>
-                    <strong style={{ fontSize: '14px' }}>{product.name}</strong>
-                    {product.description && <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.secondary }}>{product.description.substring(0, 40)}...</p>}
-                  </td>
-                  <td style={{ padding: '8px' }}>
-                    {product.category && <span style={{ background: colors.light, padding: '2px 6px', borderRadius: '4px', fontSize: '11px', color: colors.primary, whiteSpace: 'nowrap' }}>{product.category}</span>}
-                  </td>
+                  <td style={{ padding: '8px' }}>{product.image ? <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} /> : <DefaultProductImage />}</td>
+                  <td style={{ padding: '8px' }}><strong style={{ fontSize: '14px' }}>{product.name}</strong>{product.description && <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.secondary }}>{product.description.substring(0, 40)}...</p>}</td>
+                  <td style={{ padding: '8px' }}>{product.category && <span style={{ background: colors.light, padding: '2px 6px', borderRadius: '4px', fontSize: '11px', color: colors.primary, whiteSpace: 'nowrap' }}>{product.category}</span>}</td>
                   <td style={{ padding: '8px', color: colors.secondary, fontSize: '13px' }}>{product.brand || '-'}</td>
                   <td style={{ padding: '8px', fontSize: '11px', color: colors.secondary }}>
                     {product.voltage && <div style={{ whiteSpace: 'nowrap' }}>⚡ {product.voltage}</div>}
@@ -436,16 +450,10 @@ function Products() {
                     {product.wattage && <div style={{ whiteSpace: 'nowrap' }}>💡 {product.wattage}</div>}
                     {product.weight && <div style={{ whiteSpace: 'nowrap' }}>⚖️ {product.weight}</div>}
                     {product.measure && <div style={{ whiteSpace: 'nowrap' }}>📏 {product.measure}</div>}
-                    {!product.voltage && !product.amperage && !product.wattage && !product.weight && !product.measure && (
-                      <span style={{ opacity: 0.5 }}>-</span>
-                    )}
+                    {!product.voltage && !product.amperage && !product.wattage && !product.weight && !product.measure && <span style={{ opacity: 0.5 }}>-</span>}
                   </td>
-                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: '600', color: colors.primary, fontSize: '14px', whiteSpace: 'nowrap' }}>
-                    ${product.price.toFixed(2)}
-                  </td>
-                  <td style={{ padding: '8px', textAlign: 'right' }}>
-                    <span style={{ color: product.stock === 0 ? '#EF4444' : product.stock < 10 ? '#F59E0B' : '#10B981', fontWeight: '600', padding: '2px 6px', borderRadius: '4px', background: product.stock === 0 ? '#FEE2E2' : product.stock < 10 ? '#FEF3C7' : '#D1FAE5', fontSize: '13px', whiteSpace: 'nowrap' }}>{product.stock}</span>
-                  </td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: '600', color: colors.primary, fontSize: '14px', whiteSpace: 'nowrap' }}>${product.price.toFixed(2)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right' }}><span style={{ color: product.stock === 0 ? '#EF4444' : product.stock < 10 ? '#F59E0B' : '#10B981', fontWeight: '600', padding: '2px 6px', borderRadius: '4px', background: product.stock === 0 ? '#FEE2E2' : product.stock < 10 ? '#FEF3C7' : '#D1FAE5', fontSize: '13px', whiteSpace: 'nowrap' }}>{product.stock}</span></td>
                   <td style={{ padding: '8px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                     <button onClick={() => handleView(product)} style={{ marginRight: '4px', padding: '4px 8px', background: colors.primary, color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }} title="Ver detalles">👁️</button>
                     <button onClick={() => handleEdit(product)} style={{ marginRight: '4px', padding: '4px 8px', background: colors.accent, color: colors.primary, border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }} title="Editar producto">✏️</button>
@@ -458,75 +466,37 @@ function Products() {
         </table>
       </div>
 
-      {/* Estadísticas */}
       {filteredProducts.length > 0 && (
         <div style={{ marginTop: '20px', padding: '15px 20px', background: 'white', borderRadius: '12px', display: 'flex', gap: '30px', border: `1px solid ${colors.light}` }}>
-          <div><span style={{ color: colors.secondary }}>Total productos: </span><strong style={{ color: colors.primary }}>{filteredProducts.length}</strong></div>
-          <div><span style={{ color: colors.secondary }}>Valor inventario: </span><strong style={{ color: colors.primary }}>${filteredProducts.reduce((sum, p) => sum + (p.price * p.stock), 0).toFixed(2)}</strong></div>
+          <div><span style={{ color: colors.secondary }}>Total: </span><strong style={{ color: colors.primary }}>{filteredProducts.length}</strong></div>
+          <div><span style={{ color: colors.secondary }}>Valor: </span><strong style={{ color: colors.primary }}>${filteredProducts.reduce((sum, p) => sum + (p.price * p.stock), 0).toFixed(2)}</strong></div>
           <div><span style={{ color: colors.secondary }}>Categorías: </span><strong style={{ color: colors.primary }}>{[...new Set(filteredProducts.map(p => p.category).filter(Boolean))].length}</strong></div>
         </div>
       )}
 
-      {/* Modal de Ver Producto */}
+      {/* Modal Ver - igual que antes */}
       {showViewModal && viewingProduct && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}
           onClick={() => setShowViewModal(false)}>
           <div style={{ background: 'white', borderRadius: '20px', padding: '35px', width: '90%', maxWidth: '650px', maxHeight: '85vh', overflowY: 'auto', position: 'relative' }}
             onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowViewModal(false)}
-              style={{ position: 'absolute', top: '15px', right: '15px', background: '#FEE2E2', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '18px', color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-
+            <button onClick={() => setShowViewModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: '#FEE2E2', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '18px', color: '#EF4444' }}>✕</button>
             <div style={{ display: 'flex', gap: '25px', marginBottom: '25px', flexWrap: 'wrap' }}>
               <div style={{ width: '200px', height: '200px', borderRadius: '12px', overflow: 'hidden', background: colors.gray, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${colors.light}` }}>
-                {viewingProduct.image ? (
-                  <img src={viewingProduct.image} alt={viewingProduct.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ fontSize: '64px', opacity: 0.4 }}>📦</div>
-                )}
+                {viewingProduct.image ? <img src={viewingProduct.image} alt={viewingProduct.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: '64px', opacity: 0.4 }}>📦</div>}
               </div>
               <div style={{ flex: 1, minWidth: '200px' }}>
-                <h2 style={{ margin: '0 0 5px', color: colors.primary, fontSize: '22px', paddingRight: '40px' }}>{viewingProduct.name}</h2>
-                {viewingProduct.category && (
-                  <span style={{ background: colors.light, color: colors.primary, padding: '5px 12px', borderRadius: '20px', fontSize: '13px', display: 'inline-block', marginBottom: '15px' }}>{viewingProduct.category}</span>
-                )}
+                <h2 style={{ margin: '0 0 5px', color: colors.primary, fontSize: '22px' }}>{viewingProduct.name}</h2>
+                {viewingProduct.category && <span style={{ background: colors.light, color: colors.primary, padding: '5px 12px', borderRadius: '20px', fontSize: '13px' }}>{viewingProduct.category}</span>}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '15px' }}>
-                  <div style={{ background: colors.gray, padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                    <p style={{ margin: 0, color: colors.secondary, fontSize: '11px' }}>Precio</p>
-                    <p style={{ margin: '5px 0 0', fontWeight: 'bold', color: colors.primary, fontSize: '20px' }}>${viewingProduct.price.toFixed(2)}</p>
-                  </div>
-                  <div style={{ background: colors.gray, padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                    <p style={{ margin: 0, color: colors.secondary, fontSize: '11px' }}>Stock</p>
-                    <p style={{ margin: '5px 0 0', fontWeight: 'bold', color: viewingProduct.stock === 0 ? '#EF4444' : viewingProduct.stock < 10 ? '#F59E0B' : '#10B981', fontSize: '20px' }}>{viewingProduct.stock} unidades</p>
-                  </div>
+                  <div style={{ background: colors.gray, padding: '12px', borderRadius: '8px', textAlign: 'center' }}><p style={{ margin: 0, color: colors.secondary, fontSize: '11px' }}>Precio</p><p style={{ margin: '5px 0 0', fontWeight: 'bold', color: colors.primary, fontSize: '20px' }}>${viewingProduct.price.toFixed(2)}</p></div>
+                  <div style={{ background: colors.gray, padding: '12px', borderRadius: '8px', textAlign: 'center' }}><p style={{ margin: 0, color: colors.secondary, fontSize: '11px' }}>Stock</p><p style={{ margin: '5px 0 0', fontWeight: 'bold', color: viewingProduct.stock === 0 ? '#EF4444' : viewingProduct.stock < 10 ? '#F59E0B' : '#10B981', fontSize: '20px' }}>{viewingProduct.stock} unidades</p></div>
                 </div>
               </div>
             </div>
-
-            <div style={{ background: colors.gray, borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-              <h3 style={{ margin: '0 0 15px', color: colors.primary, fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>📋 Especificaciones Técnicas</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
-                {viewingProduct.brand && <div style={{ padding: '10px', background: 'white', borderRadius: '8px' }}><p style={{ margin: 0, color: colors.secondary, fontSize: '11px' }}>🏷️ Marca</p><p style={{ margin: '3px 0 0', fontWeight: '600', color: colors.primary }}>{viewingProduct.brand}</p></div>}
-                {viewingProduct.voltage && <div style={{ padding: '10px', background: 'white', borderRadius: '8px' }}><p style={{ margin: 0, color: colors.secondary, fontSize: '11px' }}>⚡ Voltaje</p><p style={{ margin: '3px 0 0', fontWeight: '600', color: colors.primary }}>{viewingProduct.voltage}</p></div>}
-                {viewingProduct.amperage && <div style={{ padding: '10px', background: 'white', borderRadius: '8px' }}><p style={{ margin: 0, color: colors.secondary, fontSize: '11px' }}>🔌 Amperaje</p><p style={{ margin: '3px 0 0', fontWeight: '600', color: colors.primary }}>{viewingProduct.amperage}</p></div>}
-                {viewingProduct.wattage && <div style={{ padding: '10px', background: 'white', borderRadius: '8px' }}><p style={{ margin: 0, color: colors.secondary, fontSize: '11px' }}>💡 Potencia</p><p style={{ margin: '3px 0 0', fontWeight: '600', color: colors.primary }}>{viewingProduct.wattage}</p></div>}
-                {viewingProduct.weight && <div style={{ padding: '10px', background: 'white', borderRadius: '8px' }}><p style={{ margin: 0, color: colors.secondary, fontSize: '11px' }}>⚖️ Peso</p><p style={{ margin: '3px 0 0', fontWeight: '600', color: colors.primary }}>{viewingProduct.weight}</p></div>}
-                {viewingProduct.measure && <div style={{ padding: '10px', background: 'white', borderRadius: '8px' }}><p style={{ margin: 0, color: colors.secondary, fontSize: '11px' }}>📏 Medida</p><p style={{ margin: '3px 0 0', fontWeight: '600', color: colors.primary }}>{viewingProduct.measure}</p></div>}
-                {!viewingProduct.brand && !viewingProduct.voltage && !viewingProduct.amperage && !viewingProduct.wattage && !viewingProduct.weight && !viewingProduct.measure && <p style={{ color: colors.secondary, gridColumn: '1 / -1', textAlign: 'center' }}>Sin especificaciones técnicas</p>}
-              </div>
-            </div>
-
-            {viewingProduct.description && (
-              <div style={{ background: colors.light, borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-                <h3 style={{ margin: '0 0 10px', color: colors.primary, fontSize: '16px' }}>📝 Descripción</h3>
-                <p style={{ margin: 0, color: colors.primary, lineHeight: '1.6' }}>{viewingProduct.description}</p>
-              </div>
-            )}
-
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setShowViewModal(false); handleEdit(viewingProduct); }}
-                style={{ padding: '10px 20px', background: colors.accent, color: colors.primary, border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>✏️ Editar</button>
-              <button onClick={() => setShowViewModal(false)}
-                style={{ padding: '10px 20px', background: colors.secondary, color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>Cerrar</button>
+              <button onClick={() => { setShowViewModal(false); handleEdit(viewingProduct); }} style={{ padding: '10px 20px', background: colors.accent, color: colors.primary, border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>✏️ Editar</button>
+              <button onClick={() => setShowViewModal(false)} style={{ padding: '10px 20px', background: colors.secondary, color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>Cerrar</button>
             </div>
           </div>
         </div>

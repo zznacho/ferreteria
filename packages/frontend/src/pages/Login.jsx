@@ -14,22 +14,34 @@ function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    setTimeout(() => {
-      if (username === 'admin' && password === 'admin123') {
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('user', JSON.stringify({ username, role: 'ADMIN' }));
-        window.location.href = '/dashboard';
-      } else {
-        setError('Usuario o contraseña incorrectos');
-      }
-      setLoading(false);
-    }, 800);
-  };
+  try {
+    const response = await fetch('http://localhost:3001/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('token', data.token);
+      window.location.href = '/dashboard';
+    } else {
+      setError(data.error || 'Usuario o contraseña incorrectos');
+    }
+  } catch (err) {
+    setError('Error de conexión con el servidor');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={{
