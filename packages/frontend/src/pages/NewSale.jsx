@@ -114,8 +114,8 @@ function NewSale() {
           src={product.image} 
           alt={product.name}
           style={{
-            width: '45px',
-            height: '45px',
+            width: '40px',
+            height: '40px',
             objectFit: 'cover',
             borderRadius: '8px'
           }}
@@ -124,15 +124,15 @@ function NewSale() {
     }
     return (
       <div style={{
-        width: '45px',
-        height: '45px',
+        width: '40px',
+        height: '40px',
         background: colors.light,
         borderRadius: '8px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         color: colors.primary,
-        fontSize: '18px'
+        fontSize: '16px'
       }}>
         📦
       </div>
@@ -140,22 +140,27 @@ function NewSale() {
   };
 
   return (
-    <div>
-      <h1 style={{ marginBottom: '30px', color: colors.primary }}>🛒 Nueva Venta</h1>
+    <div style={{ maxWidth: '100%', overflowX: 'hidden' }}>
+      <h1 style={{ marginBottom: '20px', color: colors.primary, fontSize: '24px' }}>🛒 Nueva Venta</h1>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '20px' }}>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'minmax(0, 1fr) 340px', 
+        gap: '20px',
+        alignItems: 'start'
+      }}>
         {/* Productos Disponibles */}
-        <div>
+        <div style={{ minWidth: 0, overflow: 'hidden' }}>
           <div style={{
             background: 'white',
-            padding: '24px',
+            padding: '20px',
             borderRadius: '16px',
             border: `1px solid ${colors.light}`
           }}>
             <h2 style={{ 
-              marginBottom: '20px', 
+              marginBottom: '15px', 
               color: colors.primary,
-              fontSize: '18px',
+              fontSize: '16px',
               fontWeight: '600'
             }}>
               📦 Productos Disponibles
@@ -168,21 +173,21 @@ function NewSale() {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: '100%',
-                padding: '12px 16px',
+                padding: '10px 14px',
                 border: `2px solid ${colors.light}`,
                 borderRadius: '10px',
-                marginBottom: '20px',
-                fontSize: '15px',
+                marginBottom: '15px',
+                fontSize: '14px',
                 outline: 'none',
-                background: 'white'
+                background: 'white',
+                boxSizing: 'border-box'
               }}
               onFocus={(e) => e.target.style.borderColor = colors.accent}
               onBlur={(e) => e.target.style.borderColor = colors.light}
             />
 
-            <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                {/* THEAD con mismo estilo que las otras pestañas */}
+            <div style={{ maxHeight: '500px', overflowY: 'auto', overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '650px' }}>
                 <thead>
                   <tr style={{ 
                     background: colors.primary, 
@@ -191,17 +196,17 @@ function NewSale() {
                     top: 0,
                     zIndex: 10
                   }}>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}></th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '13px', fontWeight: '600' }}>Producto</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '13px', fontWeight: '600' }}>Especificaciones</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '13px', fontWeight: '600' }}>Precio</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '13px', fontWeight: '600' }}>Cantidad</th>
+                    <th style={{ padding: '10px 6px', textAlign: 'left', fontSize: '12px', fontWeight: '600' }}></th>
+                    <th style={{ padding: '10px 6px', textAlign: 'left', fontSize: '12px', fontWeight: '600' }}>Producto</th>
+                    <th style={{ padding: '10px 6px', textAlign: 'left', fontSize: '12px', fontWeight: '600' }}>Especificaciones</th>
+                    <th style={{ padding: '10px 6px', textAlign: 'right', fontSize: '12px', fontWeight: '600' }}>Precio</th>
+                    <th style={{ padding: '10px 6px', textAlign: 'center', fontSize: '12px', fontWeight: '600' }}>Cantidad</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredProducts.length === 0 ? (
                     <tr>
-                      <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
+                      <td colSpan="5" style={{ padding: '30px', textAlign: 'center', color: colors.secondary }}>
                         {searchTerm ? 'No se encontraron productos' : 'No hay productos disponibles'}
                       </td>
                     </tr>
@@ -210,56 +215,56 @@ function NewSale() {
                       const quantity = getCartQuantity(product.id);
                       return (
                         <tr key={product.id} style={{ borderBottom: `1px solid ${colors.light}` }}>
-                          <td style={{ padding: '10px 8px' }}>
+                          <td style={{ padding: '8px 6px' }}>
                             <ProductImage product={product} />
                           </td>
-                          <td style={{ padding: '10px 8px' }}>
-                            <strong style={{ color: colors.primary }}>{product.name}</strong>
-                            <div style={{ fontSize: '12px', color: colors.secondary, marginTop: '2px' }}>
-                              {product.category && <span style={{ marginRight: '8px' }}>📁 {product.category}</span>}
+                          <td style={{ padding: '8px 6px' }}>
+                            <strong style={{ color: colors.primary, fontSize: '13px' }}>{product.name}</strong>
+                            <div style={{ fontSize: '11px', color: colors.secondary, marginTop: '2px' }}>
+                              {product.category && <span style={{ marginRight: '6px' }}>📁 {product.category}</span>}
                               {product.brand && <span>🏷️ {product.brand}</span>}
                             </div>
-                            <div style={{ fontSize: '11px', color: colors.secondary, marginTop: '2px' }}>
+                            <div style={{ fontSize: '10px', color: colors.secondary, marginTop: '2px' }}>
                               Stock: <span style={{ 
                                 color: product.stock < 5 ? '#EF4444' : '#10B981',
                                 fontWeight: '600'
                               }}>{product.stock}</span>
                             </div>
                           </td>
-                          <td style={{ padding: '10px 8px', fontSize: '11px', color: colors.secondary }}>
-                            {product.voltage && <div>⚡ {product.voltage}</div>}
-                            {product.amperage && <div>🔌 {product.amperage}</div>}
-                            {product.wattage && <div>💡 {product.wattage}</div>}
-                            {product.weight && <div>⚖️ {product.weight}</div>}
-                            {product.measure && <div>📏 {product.measure}</div>}
+                          <td style={{ padding: '8px 6px', fontSize: '10px', color: colors.secondary }}>
+                            {product.voltage && <div style={{ whiteSpace: 'nowrap' }}>⚡ {product.voltage}</div>}
+                            {product.amperage && <div style={{ whiteSpace: 'nowrap' }}>🔌 {product.amperage}</div>}
+                            {product.wattage && <div style={{ whiteSpace: 'nowrap' }}>💡 {product.wattage}</div>}
+                            {product.weight && <div style={{ whiteSpace: 'nowrap' }}>⚖️ {product.weight}</div>}
+                            {product.measure && <div style={{ whiteSpace: 'nowrap' }}>📏 {product.measure}</div>}
                             {!product.voltage && !product.amperage && !product.wattage && !product.weight && !product.measure && (
                               <span style={{ opacity: 0.5 }}>-</span>
                             )}
                           </td>
-                          <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: '600', color: colors.primary }}>
+                          <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: '600', color: colors.primary, fontSize: '13px', whiteSpace: 'nowrap' }}>
                             ${product.price.toLocaleString('es-ES', {minimumFractionDigits: 2})}
                           </td>
-                          <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                          <td style={{ padding: '8px 6px', textAlign: 'center' }}>
                             <div style={{ 
                               display: 'flex', 
                               alignItems: 'center', 
                               justifyContent: 'center', 
-                              gap: '8px',
+                              gap: '5px',
                               background: colors.gray,
-                              padding: '4px 8px',
-                              borderRadius: '20px'
+                              padding: '3px 6px',
+                              borderRadius: '16px'
                             }}>
                               <button
                                 onClick={() => handleUpdateQuantity(product, -1)}
                                 disabled={quantity === 0}
                                 style={{
-                                  width: '28px',
-                                  height: '28px',
+                                  width: '24px',
+                                  height: '24px',
                                   borderRadius: '50%',
                                   border: 'none',
                                   background: quantity === 0 ? '#E5E7EB' : colors.accent,
                                   color: quantity === 0 ? '#9CA3AF' : colors.primary,
-                                  fontSize: '18px',
+                                  fontSize: '16px',
                                   fontWeight: 'bold',
                                   cursor: quantity === 0 ? 'not-allowed' : 'pointer',
                                   display: 'flex',
@@ -270,10 +275,10 @@ function NewSale() {
                                 −
                               </button>
                               <span style={{ 
-                                minWidth: '24px', 
+                                minWidth: '20px', 
                                 textAlign: 'center',
                                 fontWeight: '600',
-                                fontSize: '14px',
+                                fontSize: '13px',
                                 color: quantity > 0 ? colors.primary : colors.secondary
                               }}>
                                 {quantity}
@@ -282,13 +287,13 @@ function NewSale() {
                                 onClick={() => handleUpdateQuantity(product, 1)}
                                 disabled={quantity >= product.stock}
                                 style={{
-                                  width: '28px',
-                                  height: '28px',
+                                  width: '24px',
+                                  height: '24px',
                                   borderRadius: '50%',
                                   border: 'none',
                                   background: quantity >= product.stock ? '#E5E7EB' : colors.accent,
                                   color: quantity >= product.stock ? '#9CA3AF' : colors.primary,
-                                  fontSize: '18px',
+                                  fontSize: '16px',
                                   fontWeight: 'bold',
                                   cursor: quantity >= product.stock ? 'not-allowed' : 'pointer',
                                   display: 'flex',
@@ -311,19 +316,19 @@ function NewSale() {
         </div>
 
         {/* Carrito */}
-        <div>
+        <div style={{ width: '340px', flexShrink: 0 }}>
           <div style={{
             background: 'white',
-            padding: '24px',
+            padding: '20px',
             borderRadius: '16px',
             border: `1px solid ${colors.light}`,
             position: 'sticky',
             top: '20px'
           }}>
             <h2 style={{ 
-              marginBottom: '20px', 
+              marginBottom: '15px', 
               color: colors.primary,
-              fontSize: '18px',
+              fontSize: '16px',
               fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
@@ -336,9 +341,9 @@ function NewSale() {
                   marginLeft: 'auto',
                   background: colors.accent,
                   color: colors.primary,
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  fontSize: '14px',
+                  padding: '3px 8px',
+                  borderRadius: '16px',
+                  fontSize: '12px',
                   fontWeight: '600'
                 }}>
                   {cart.reduce((sum, item) => sum + item.quantity, 0)} items
@@ -349,38 +354,38 @@ function NewSale() {
             {cart.length === 0 ? (
               <div style={{ 
                 textAlign: 'center', 
-                padding: '40px 20px',
+                padding: '30px 15px',
                 color: colors.secondary
               }}>
-                <div style={{ fontSize: '48px', marginBottom: '10px', opacity: 0.5 }}>🛒</div>
-                <p>El carrito está vacío</p>
+                <div style={{ fontSize: '40px', marginBottom: '8px', opacity: 0.5 }}>🛒</div>
+                <p style={{ fontSize: '14px' }}>El carrito está vacío</p>
               </div>
             ) : (
               <>
-                <div style={{ maxHeight: '350px', overflowY: 'auto', marginBottom: '20px' }}>
+                <div style={{ maxHeight: '350px', overflowY: 'auto', marginBottom: '15px' }}>
                   {cart.map(item => (
                     <div key={item.id} style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '12px',
-                      padding: '12px 0',
+                      gap: '10px',
+                      padding: '10px 0',
                       borderBottom: `1px solid ${colors.light}`
                     }}>
                       <ProductImage product={item} />
-                      <div style={{ flex: 1 }}>
-                        <strong style={{ color: colors.primary, fontSize: '14px' }}>{item.name}</strong>
-                        <div style={{ fontSize: '11px', color: colors.secondary, marginTop: '2px' }}>
-                          {item.voltage && <span style={{ marginRight: '6px' }}>⚡{item.voltage}</span>}
-                          {item.amperage && <span style={{ marginRight: '6px' }}>🔌{item.amperage}</span>}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <strong style={{ color: colors.primary, fontSize: '13px' }}>{item.name}</strong>
+                        <div style={{ fontSize: '10px', color: colors.secondary, marginTop: '2px' }}>
+                          {item.voltage && <span style={{ marginRight: '5px' }}>⚡{item.voltage}</span>}
+                          {item.amperage && <span style={{ marginRight: '5px' }}>🔌{item.amperage}</span>}
                           {item.wattage && <span>💡{item.wattage}</span>}
                         </div>
                         <div style={{ 
                           display: 'flex', 
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          marginTop: '4px'
+                          marginTop: '3px'
                         }}>
-                          <span style={{ color: colors.secondary, fontSize: '13px' }}>
+                          <span style={{ color: colors.secondary, fontSize: '12px' }}>
                             ${item.price.toFixed(2)} x {item.quantity}
                           </span>
                         </div>
@@ -388,7 +393,8 @@ function NewSale() {
                       <div style={{ 
                         fontWeight: 'bold', 
                         color: colors.primary,
-                        fontSize: '15px'
+                        fontSize: '14px',
+                        whiteSpace: 'nowrap'
                       }}>
                         ${(item.price * item.quantity).toLocaleString('es-ES', {minimumFractionDigits: 2})}
                       </div>
@@ -398,13 +404,13 @@ function NewSale() {
                 
                 <div style={{
                   borderTop: `2px solid ${colors.light}`,
-                  paddingTop: '16px',
-                  marginBottom: '20px'
+                  paddingTop: '15px',
+                  marginBottom: '15px'
                 }}>
                   <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between',
-                    fontSize: '20px',
+                    fontSize: '18px',
                     fontWeight: 'bold'
                   }}>
                     <span style={{ color: colors.primary }}>Total:</span>
@@ -418,12 +424,12 @@ function NewSale() {
                   onClick={handleCompleteSale}
                   style={{
                     width: '100%',
-                    padding: '16px',
+                    padding: '14px',
                     background: colors.primary,
                     color: 'white',
                     border: 'none',
-                    borderRadius: '12px',
-                    fontSize: '16px',
+                    borderRadius: '10px',
+                    fontSize: '15px',
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s'
