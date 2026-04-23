@@ -314,49 +314,52 @@ function Sales() {
         marginBottom: '20px',
         border: `1px solid ${colors.light}`
       }}>
-        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: '2', minWidth: '250px' }}>
-            <input
-              type="text"
-              placeholder="🔍 Buscar por ID de venta o nombre de producto..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+        {/* Barra de búsqueda - Fila completa */}
+        <div style={{ position: 'relative', marginBottom: '15px' }}>
+          <input
+            type="text"
+            placeholder="🔍 Buscar por ID de venta o nombre de producto..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 40px 12px 12px',
+              border: `2px solid ${colors.light}`,
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none',
+              background: 'white',
+              boxSizing: 'border-box'
+            }}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
               style={{
-                width: '100%',
-                padding: '12px 40px 12px 12px',
-                border: `2px solid ${colors.light}`,
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-                background: 'white'
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                fontSize: '20px',
+                cursor: 'pointer',
+                color: colors.secondary
               }}
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                  color: colors.secondary
-                }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Selector de ordenamiento - Segunda fila */}
+        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             style={{
               flex: '1',
-              minWidth: '180px',
+              minWidth: '200px',
               padding: '12px',
               border: `2px solid ${colors.light}`,
               borderRadius: '8px',
@@ -374,6 +377,7 @@ function Sales() {
           </select>
         </div>
         
+        {/* Mensaje de resultados */}
         {searchTerm && (
           <div style={{ marginTop: '15px', color: colors.secondary, fontSize: '13px' }}>
             <strong>{filteredSales.length}</strong> venta(s) encontrada(s)
