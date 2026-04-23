@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const colors = {
+  primary: '#263B6A',
+  secondary: '#6984A9',
+  accent: '#A0D585',
+  light: '#EEFABD',
+  white: '#FFFFFF',
+  gray: '#F8FAFC'
+};
+
 function NewSale() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState('');
-  const [quantity, setQuantity] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -22,23 +29,17 @@ function NewSale() {
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddToCart = () => {
-    const product = products.find(p => p.id.toString() === selectedProduct);
-    if (!product || quantity > product.stock) {
-      alert('Stock insuficiente');
-      return;
-    }
-
+  const handleAddToCart = (product) => {
     const existingItem = cart.find(item => item.id === product.id);
     
     if (existingItem) {
-      if (existingItem.quantity + quantity > product.stock) {
+      if (existingItem.quantity + 1 > product.stock) {
         alert('Stock insuficiente');
         return;
       }
       setCart(cart.map(item =>
         item.id === product.id
-          ? { ...item, quantity: item.quantity + quantity }
+          ? { ...item, quantity: item.quantity + 1 }
           : item
       ));
     } else {
@@ -46,27 +47,27 @@ function NewSale() {
         id: product.id,
         name: product.name,
         price: product.price,
-        quantity: quantity,
+        quantity: 1,
         image: product.image
       }]);
     }
-
-    setSelectedProduct('');
-    setQuantity(1);
   };
 
-  const handleRemoveFromCart = (productId) => {
-    setCart(cart.filter(item => item.id !== productId));
-  };
-
-  const handleUpdateQuantity = (productId, newQuantity) => {
+  const handleUpdateQuantity = (productId, change) => {
+    const cartItem = cart.find(item => item.id === productId);
     const product = products.find(p => p.id === productId);
+    
+    if (!cartItem || !product) return;
+    
+    const newQuantity = cartItem.quantity + change;
+    
     if (newQuantity > product.stock) {
       alert('Stock insuficiente');
       return;
     }
+    
     if (newQuantity <= 0) {
-      handleRemoveFromCart(productId);
+      setCart(cart.filter(item => item.id !== productId));
     } else {
       setCart(cart.map(item =>
         item.id === productId ? { ...item, quantity: newQuantity } : item
@@ -102,7 +103,6 @@ function NewSale() {
     const sales = JSON.parse(localStorage.getItem('sales') || '[]');
     sales.push(sale);
     
-    // Actualizar también los productos que no están en la venta
     const allProducts = JSON.parse(localStorage.getItem('products') || '[]');
     const updatedAllProducts = allProducts.map(product => {
       const updated = updatedProducts.find(p => p.id === product.id);
@@ -112,13 +112,12 @@ function NewSale() {
     localStorage.setItem('sales', JSON.stringify(sales));
     localStorage.setItem('products', JSON.stringify(updatedAllProducts));
 
-    alert(`✅ Venta completada! Total: $${sale.total.toFixed(2)}`);
+    alert(`✅ Venta completada! Total: $${sale.total.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
     navigate('/sales');
   };
 
-  // Componente de imagen por defecto
   const ProductImage = ({ product }) => {
-    if (product.image) {
+    if (product?.image) {
       return (
         <img 
           src={product.image} 
@@ -127,7 +126,7 @@ function NewSale() {
             width: '50px',
             height: '50px',
             objectFit: 'cover',
-            borderRadius: '5px'
+            borderRadius: '8px'
           }}
         />
       );
@@ -136,12 +135,12 @@ function NewSale() {
       <div style={{
         width: '50px',
         height: '50px',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        borderRadius: '5px',
+        background: colors.light,
+        borderRadius: '8px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: 'white',
+        color: colors.primary,
         fontSize: '20px'
       }}>
         📦
@@ -151,19 +150,27 @@ function NewSale() {
 
   return (
     <div>
-      <h1 style={{ marginBottom: '30px', color: '#333' }}>🛒 Nueva Venta</h1>
+      <h1 style={{ marginBottom: '30px', color: colors.primary }}>🛒 Nueva Venta</h1>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '20px' }}>
-        {/* Productos disponibles */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '20px' }}>
+        {/* Productos Disponibles */}
         <div>
           <div style={{
             background: 'white',
-            padding: '20px',
-            borderRadius: '10px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            padding: '24px',
+            borderRadius: '16px',
+            border: `1px solid ${colors.light}`
           }}>
-            <h2 style={{ marginBottom: '20px', color: '#555' }}>📦 Productos Disponibles</h2>
+            <h2 style={{ 
+              marginBottom: '20px', 
+              color: colors.primary,
+              fontSize: '18px',
+              fontWeight: '600'
+            }}>
+              📦 Productos Disponibles
+            </h2>
             
+            {/* Barra de búsqueda simple */}
             <input
               type="text"
               placeholder="🔍 Buscar producto..."
@@ -171,95 +178,155 @@ function NewSale() {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '5px',
+                padding: '12px 16px',
+                border: `2px solid ${colors.light}`,
+                borderRadius: '10px',
                 marginBottom: '20px',
-                fontSize: '16px'
+                fontSize: '15px',
+                outline: 'none',
+                background: 'white'
               }}
+              onFocus={(e) => e.target.style.borderColor = colors.accent}
+              onBlur={(e) => e.target.style.borderColor = colors.light}
             />
 
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-              <select
-                value={selectedProduct}
-                onChange={(e) => setSelectedProduct(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '5px',
-                  fontSize: '16px'
-                }}
-              >
-                <option value="">Seleccionar producto</option>
-                {filteredProducts.map(product => (
-                  <option key={product.id} value={product.id}>
-                    {product.name} - ${product.price} (Stock: {product.stock})
-                  </option>
-                ))}
-              </select>
-              
-              <input
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                style={{
-                  width: '80px',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '5px',
-                  fontSize: '16px'
-                }}
-              />
-              
-              <button
-                onClick={handleAddToCart}
-                disabled={!selectedProduct}
-                style={{
-                  padding: '10px 20px',
-                  background: selectedProduct ? '#667eea' : '#ccc',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: selectedProduct ? 'pointer' : 'not-allowed',
-                  fontSize: '16px'
-                }}
-              >
-                Agregar
-              </button>
-            </div>
-
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            {/* Lista de productos */}
+            <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '2px solid #ddd' }}>
-                    <th style={{ padding: '10px', textAlign: 'left' }}></th>
-                    <th style={{ padding: '10px', textAlign: 'left' }}>Producto</th>
-                    <th style={{ padding: '10px', textAlign: 'right' }}>Precio</th>
-                    <th style={{ padding: '10px', textAlign: 'center' }}>Stock</th>
+                  <tr style={{ borderBottom: `2px solid ${colors.light}` }}>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', color: colors.secondary, fontSize: '13px', fontWeight: '600' }}></th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', color: colors.secondary, fontSize: '13px', fontWeight: '600' }}>Producto</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'right', color: colors.secondary, fontSize: '13px', fontWeight: '600' }}>Precio</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'center', color: colors.secondary, fontSize: '13px', fontWeight: '600' }}>Stock</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'center', color: colors.secondary, fontSize: '13px', fontWeight: '600' }}></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.map(product => (
-                    <tr key={product.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '10px' }}>
-                        <ProductImage product={product} />
-                      </td>
-                      <td style={{ padding: '10px' }}>{product.name}</td>
-                      <td style={{ padding: '10px', textAlign: 'right' }}>
-                        ${product.price.toFixed(2)}
-                      </td>
-                      <td style={{ padding: '10px', textAlign: 'center' }}>
-                        <span style={{
-                          color: product.stock < 5 ? '#f5576c' : '#4caf50',
-                          fontWeight: 'bold'
-                        }}>
-                          {product.stock}
-                        </span>
+                  {filteredProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
+                        {searchTerm ? 'No se encontraron productos' : 'No hay productos disponibles'}
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredProducts.map(product => {
+                      const cartItem = cart.find(item => item.id === product.id);
+                      return (
+                        <tr key={product.id} style={{ borderBottom: `1px solid ${colors.light}` }}>
+                          <td style={{ padding: '10px 8px' }}>
+                            <ProductImage product={product} />
+                          </td>
+                          <td style={{ padding: '10px 8px' }}>
+                            <strong style={{ color: colors.primary }}>{product.name}</strong>
+                          </td>
+                          <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: '600', color: colors.primary }}>
+                            ${product.price.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          </td>
+                          <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                            <span style={{
+                              color: product.stock < 5 ? '#EF4444' : '#10B981',
+                              fontWeight: '600',
+                              fontSize: '14px'
+                            }}>
+                              {product.stock}
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                            {cartItem ? (
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                <button
+                                  onClick={() => handleUpdateQuantity(product.id, -1)}
+                                  style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    border: `2px solid ${colors.accent}`,
+                                    background: 'white',
+                                    color: colors.primary,
+                                    fontSize: '18px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.target.style.background = colors.accent;
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.target.style.background = 'white';
+                                  }}
+                                >
+                                  −
+                                </button>
+                                <span style={{ 
+                                  minWidth: '24px', 
+                                  textAlign: 'center',
+                                  fontWeight: '600',
+                                  color: colors.primary
+                                }}>
+                                  {cartItem.quantity}
+                                </span>
+                                <button
+                                  onClick={() => handleUpdateQuantity(product.id, 1)}
+                                  style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    border: `2px solid ${colors.accent}`,
+                                    background: 'white',
+                                    color: colors.primary,
+                                    fontSize: '18px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.target.style.background = colors.accent;
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.target.style.background = 'white';
+                                  }}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleAddToCart(product)}
+                                style={{
+                                  padding: '6px 16px',
+                                  background: colors.accent,
+                                  color: colors.primary,
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  cursor: 'pointer',
+                                  fontSize: '13px',
+                                  fontWeight: '600',
+                                  transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.background = colors.primary;
+                                  e.target.style.color = 'white';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.background = colors.accent;
+                                  e.target.style.color = colors.primary;
+                                }}
+                              >
+                                Agregar
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -270,85 +337,151 @@ function NewSale() {
         <div>
           <div style={{
             background: 'white',
-            padding: '20px',
-            borderRadius: '10px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            padding: '24px',
+            borderRadius: '16px',
+            border: `1px solid ${colors.light}`,
+            position: 'sticky',
+            top: '20px'
           }}>
-            <h2 style={{ marginBottom: '20px', color: '#555' }}>🛒 Carrito</h2>
+            <h2 style={{ 
+              marginBottom: '20px', 
+              color: colors.primary,
+              fontSize: '18px',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span>🛒</span>
+              Carrito
+              {cart.length > 0 && (
+                <span style={{
+                  marginLeft: 'auto',
+                  background: colors.accent,
+                  color: colors.primary,
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}>
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)} items
+                </span>
+              )}
+            </h2>
             
             {cart.length === 0 ? (
-              <p style={{ color: '#999', textAlign: 'center', padding: '40px 0' }}>
-                El carrito está vacío
-              </p>
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '40px 20px',
+                color: colors.secondary
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '10px', opacity: 0.5 }}>🛒</div>
+                <p>El carrito está vacío</p>
+                <p style={{ fontSize: '13px', marginTop: '8px' }}>
+                  Agrega productos desde la lista
+                </p>
+              </div>
             ) : (
               <>
                 <div style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '20px' }}>
                   {cart.map(item => (
                     <div key={item.id} style={{
-                      padding: '10px',
-                      borderBottom: '1px solid #eee',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px'
+                      gap: '12px',
+                      padding: '12px 0',
+                      borderBottom: `1px solid ${colors.light}`
                     }}>
                       <ProductImage product={item} />
                       <div style={{ flex: 1 }}>
-                        <strong>{item.name}</strong>
-                        <br />
-                        <small style={{ color: '#666' }}>${item.price.toFixed(2)} c/u</small>
+                        <strong style={{ color: colors.primary, fontSize: '14px' }}>{item.name}</strong>
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginTop: '4px'
+                        }}>
+                          <span style={{ color: colors.secondary, fontSize: '13px' }}>
+                            ${item.price.toFixed(2)} c/u
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <button
+                              onClick={() => handleUpdateQuantity(item.id, -1)}
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '6px',
+                                border: `2px solid ${colors.accent}`,
+                                background: 'white',
+                                color: colors.primary,
+                                fontSize: '16px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = colors.accent;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = 'white';
+                              }}
+                            >
+                              −
+                            </button>
+                            <span style={{ 
+                              minWidth: '20px', 
+                              textAlign: 'center',
+                              fontWeight: '600',
+                              color: colors.primary
+                            }}>
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => handleUpdateQuantity(item.id, 1)}
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '6px',
+                                border: `2px solid ${colors.accent}`,
+                                background: 'white',
+                                color: colors.primary,
+                                fontSize: '16px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = colors.accent;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = 'white';
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <button
-                          onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                          style={{
-                            width: '25px',
-                            height: '25px',
-                            background: '#f0f0f0',
-                            border: 'none',
-                            borderRadius: '3px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          -
-                        </button>
-                        <span style={{ minWidth: '25px', textAlign: 'center' }}>
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                          style={{
-                            width: '25px',
-                            height: '25px',
-                            background: '#f0f0f0',
-                            border: 'none',
-                            borderRadius: '3px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          +
-                        </button>
-                        <button
-                          onClick={() => handleRemoveFromCart(item.id)}
-                          style={{
-                            marginLeft: '5px',
-                            padding: '5px 10px',
-                            background: '#f5576c',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '3px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          🗑️
-                        </button>
+                      <div style={{ 
+                        fontWeight: 'bold', 
+                        color: colors.primary,
+                        fontSize: '15px',
+                        minWidth: '70px',
+                        textAlign: 'right'
+                      }}>
+                        ${(item.price * item.quantity).toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                       </div>
                     </div>
                   ))}
                 </div>
                 
                 <div style={{
-                  borderTop: '2px solid #ddd',
-                  paddingTop: '15px',
+                  borderTop: `2px solid ${colors.light}`,
+                  paddingTop: '16px',
                   marginBottom: '20px'
                 }}>
                   <div style={{ 
@@ -357,9 +490,9 @@ function NewSale() {
                     fontSize: '20px',
                     fontWeight: 'bold'
                   }}>
-                    <span>Total:</span>
-                    <span style={{ color: '#667eea' }}>
-                      ${calculateTotal().toFixed(2)}
+                    <span style={{ color: colors.primary }}>Total:</span>
+                    <span style={{ color: '#10B981' }}>
+                      ${calculateTotal().toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     </span>
                   </div>
                 </div>
@@ -368,17 +501,31 @@ function NewSale() {
                   onClick={handleCompleteSale}
                   style={{
                     width: '100%',
-                    padding: '15px',
-                    background: 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)',
+                    padding: '16px',
+                    background: colors.primary,
                     color: 'white',
                     border: 'none',
-                    borderRadius: '5px',
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer'
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = colors.secondary;
+                    e.target.style.transform = 'scale(1.02)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = colors.primary;
+                    e.target.style.transform = 'scale(1)';
                   }}
                 >
-                  💰 Completar Venta
+                  <span>💰</span>
+                  Completar Venta
                 </button>
               </>
             )}
