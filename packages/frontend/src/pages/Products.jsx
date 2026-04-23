@@ -21,9 +21,11 @@ const CATEGORIES = [
   'Herramientas'
 ];
 
-const WEIGHT_UNITS = ['kg', 'g'];
-const MEASURE_UNITS = ['metros', 'centímetros', 'milímetros'];
+const WEIGHT_UNITS = ['kg', 'g', 'mg', 'L', 'mL'];
+const MEASURE_UNITS = ['metros', 'centímetros', 'milímetros', 'metros cuadrados'];
 const VOLTAGE_OPTIONS = ['12V', '24V', '110V', '220V', '380V'];
+const AMPERAGE_OPTIONS = ['1A', '2A', '5A', '10A', '15A', '20A', '30A'];
+const WATTAGE_OPTIONS = ['5W', '10W', '15W', '25W', '40W', '60W', '100W', '200W'];
 
 function Products() {
   const [products, setProducts] = useState([]);
@@ -39,20 +41,22 @@ function Products() {
   // Estados para opciones de selects dinámicos (marcas)
   const [brands, setBrands] = useState([]);
   
-  const [formData, setFormData] = useState({
-    name: '',
-    price: '',
-    stock: '',
-    category: '',
-    brand: '',
-    weightValue: '',
-    weightUnit: 'kg',
-    measureValue: '',
-    measureUnit: 'metros',
-    voltage: '',
-    description: '',
-    image: null
-  });
+const [formData, setFormData] = useState({
+  name: '',
+  price: '',
+  stock: '',
+  category: '',
+  brand: '',
+  weightValue: '',
+  weightUnit: 'kg',
+  measureValue: '',
+  measureUnit: 'metros',
+  voltage: '',
+  amperage: '',
+  wattage: '',
+  description: '',
+  image: null
+});
 
   useEffect(() => {
     loadProducts();
@@ -644,6 +648,24 @@ function Products() {
                     </select>
                   </div>
                 </div>
+
+                                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
+                    Descripción
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    style={{
+                      ...inputStyle,
+                      resize: 'vertical',
+                      minHeight: '80px'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = colors.accent}
+                    onBlur={(e) => e.target.style.borderColor = colors.light}
+                  />
+                </div>
+
               </div>
 
               {/* Columna 2 */}
@@ -708,37 +730,53 @@ function Products() {
                 </div>
                 
                 <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Voltaje
-                  </label>
-                  <select
-                    value={formData.voltage}
-                    onChange={(e) => setFormData({...formData, voltage: e.target.value})}
-                    style={selectStyle}
-                  >
-                    <option value="">Seleccionar voltaje</option>
-                    {VOLTAGE_OPTIONS.map(volt => (
-                      <option key={volt} value={volt}>{volt}</option>
-                    ))}
-                  </select>
-                </div>
+  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
+    Voltaje
+  </label>
+  <select
+    value={formData.voltage}
+    onChange={(e) => setFormData({...formData, voltage: e.target.value})}
+    style={selectStyle}
+  >
+    <option value="">Seleccionar voltaje</option>
+    {VOLTAGE_OPTIONS.map(volt => (
+      <option key={volt} value={volt}>{volt}</option>
+    ))}
+  </select>
+</div>
+
+<div style={{ marginBottom: '15px' }}>
+  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
+    Amperaje
+  </label>
+  <select
+    value={formData.amperage}
+    onChange={(e) => setFormData({...formData, amperage: e.target.value})}
+    style={selectStyle}
+  >
+    <option value="">Seleccionar amperaje</option>
+    {AMPERAGE_OPTIONS.map(amp => (
+      <option key={amp} value={amp}>{amp}</option>
+    ))}
+  </select>
+</div>
+
+<div style={{ marginBottom: '15px' }}>
+  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
+    Potencia (Watts)
+  </label>
+  <select
+    value={formData.wattage}
+    onChange={(e) => setFormData({...formData, wattage: e.target.value})}
+    style={selectStyle}
+  >
+    <option value="">Seleccionar potencia</option>
+    {WATTAGE_OPTIONS.map(watt => (
+      <option key={watt} value={watt}>{watt}</option>
+    ))}
+  </select>
+</div>
                 
-                <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Descripción
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    style={{
-                      ...inputStyle,
-                      resize: 'vertical',
-                      minHeight: '80px'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = colors.accent}
-                    onBlur={(e) => e.target.style.borderColor = colors.light}
-                  />
-                </div>
               </div>
 
               {/* Columna 3 - Imagen */}
