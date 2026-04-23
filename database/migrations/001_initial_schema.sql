@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS products (
     weight VARCHAR(50),
     measure VARCHAR(100),
     voltage VARCHAR(50),
+    amperage VARCHAR(50),
+    wattage VARCHAR(50),
     description TEXT,
     image_path TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -53,18 +55,6 @@ CREATE TABLE IF NOT EXISTS product_categories (
 CREATE TABLE IF NOT EXISTS product_brands (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) UNIQUE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS product_measures (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) UNIQUE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS product_voltages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(50) UNIQUE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -105,7 +95,7 @@ CREATE TRIGGER update_sale_items_updated_at
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 
--- Insertar admin por defecto
+-- Insertar admin por defecto (password: admin123)
 INSERT INTO users (username, password_hash, role) 
 VALUES ('admin', '$2b$10$rKqHS3z6V7YQYqZ8YQZ8YuZ8YQZ8YuZ8YQZ8YuZ8YQZ8YuZ8YQZ8YuZ8', 'admin')
 ON CONFLICT (username) DO NOTHING;
