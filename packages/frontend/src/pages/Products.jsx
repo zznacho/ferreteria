@@ -141,66 +141,97 @@ function Products() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (formData.brand) saveBrand(formData.brand);
-    const weight = formData.weightValue ? `${formData.weightValue} ${formData.weightUnit}` : null;
-    const measure = formData.measureValue ? `${formData.measureValue} ${formData.measureUnit}` : null;
-    
-    const productData = {
-      id: editingProduct?.id || Date.now().toString(),
-      name: formData.name,
-      price: parseFloat(formData.price),
-      stock: parseInt(formData.stock),
-      category: formData.category || null,
-      brand: formData.brand || null,
-      weight: weight,
-      measure: measure,
-      voltage: formData.voltage || null,
-      amperage: formData.amperage || null,
-      wattage: formData.wattage || null,
-      description: formData.description || null,
-      image: formData.image || null,
-      updated_at: new Date().toISOString()
-    };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (formData.brand) saveBrand(formData.brand);
+  const weight = formData.weightValue ? `${formData.weightValue} ${formData.weightUnit}` : null;
+  const measure = formData.measureValue ? `${formData.measureValue} ${formData.measureUnit}` : null;
+  
+  // Crear FormData para enviar la imagen como archivo
+  const dataToSend = new FormData();
+  dataToSend.append('name', formData.name);
+  dataToSend.append('price', parseFloat(formData.price));
+  dataToSend.append('stock', parseInt(formData.stock));
+  if (formData.category) dataToSend.append('category', formData.category);
+  if (formData.brand) dataToSend.append('brand', formData.brand);
+  if (weight) dataToSend.append('weight', weight);
+  if (measure) dataToSend.append('measure', measure);
+  if (formData.voltage) dataToSend.append('voltage', formData.voltage);
+  if (formData.amperage) dataToSend.append('amperage', formData.amperage);
+  if (formData.wattage) dataToSend.append('wattage', formData.wattage);
+  if (formData.description) dataToSend.append('description', formData.description);
+  
+  // Adjuntar archivo de imagen si existe
+  if (fileInputRef.current?.files[0]) {
+    dataToSend.append('image', fileInputRef.current.files[0]);
+  }
 
-    // Guardar en localStorage (offline-first)
-    let updatedProducts;
-    if (editingProduct) {
-      updatedProducts = products.map(p => p.id === editingProduct.id ? productData : p);
-    } else {
-      updatedProducts = [...products, productData];
-    }
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
-    setProducts(updatedProducts);
-
-    // Intentar guardar en backend
-    try {
-      const token = localStorage.getItem('token');
-      const method = editingProduct ? 'PUT' : 'POST';
-      const url = editingProduct ? `${API_URL}/products/${editingProduct.id}` : `${API_URL}/products`;
-      
-      await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(productData)
-      });
-    } catch (error) {
-      console.log('Guardado offline - se sincronizará después');
-    }
-
-    setShowForm(false);
-    setEditingProduct(null);
-    setImagePreview(null);
-    setFormData({ 
-      name: '', price: '', stock: '', category: '', brand: '', 
-      weightValue: '', weightUnit: 'kg', measureValue: '', measureUnit: 'metros', 
-      voltage: '', amperage: '', wattage: '', description: '', image: null 
-    });
+  // Guardar en localStorage (offline-first con Base64 como respaldo)
+  const productData = {
+    id: editingProduct?.id || Date.now().toString(),
+    name: formData.name,
+    price: parseFloat(formData.price),
+    stock: parseInt(formData.stock),
+    category: formData.category || null,
+    brand: formData.brand || null,
+    weight: weight,
+    measure: measure,
+    voltage: formData.voltage || null,
+    amperage: formData.amperage || null,
+    wattage: formData.wattage || null,
+    description: formData.description || null,
+    image: formData.image || null, // Base64 para offline
+    updated_at: new Date().toISOString()
   };
+
+  let updatedProducts;
+  if (editingProduct) {
+    updatedProducts = products.map(p => p.id === editingProduct.id ? productData : p);
+  } else {
+    updatedProducts = [...products, productData];
+  }
+  localStorage.setItem('products', JSON.stringify(updatedProducts));
+  setProducts(updatedProducts);
+
+  // Enviar al backend como FormData (imagen real)
+  try {
+    const token = localStorage.getItem('token');
+    const method = editingProduct ? 'PUT' : 'POST';
+    const url = editingProduct ? `${API_URL}/products/${editingProduct.id}` : `${API_URL}/products`;
+    
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Authorization': `Bearer ${token}`
+        // NO pongas Content-Type aquí, fetch lo agrega con el boundary correcto
+      },
+      body: dataToSend
+    });
+    
+    if (response.ok) {
+      const savedProduct = await response.json();
+      // Actualizar el producto local con la URL de la imagen del servidor
+      if (savedProduct.image_url) {
+        const updatedWithUrl = updatedProducts.map(p => 
+          p.id === productData.id ? { ...p, image_url: savedProduct.image_url } : p
+        );
+        localStorage.setItem('products', JSON.stringify(updatedWithUrl));
+        setProducts(updatedWithUrl);
+      }
+    }
+  } catch (error) {
+    console.log('Guardado offline - se sincronizará después');
+  }
+
+  setShowForm(false);
+  setEditingProduct(null);
+  setImagePreview(null);
+  setFormData({ 
+    name: '', price: '', stock: '', category: '', brand: '', 
+    weightValue: '', weightUnit: 'kg', measureValue: '', measureUnit: 'metros', 
+    voltage: '', amperage: '', wattage: '', description: '', image: null 
+  });
+};
   
   const handleDelete = async (id) => {
     if (window.confirm('¿Estás seguro de eliminar este producto?')) {
@@ -443,7 +474,7 @@ function Products() {
             ) : (
               filteredProducts.map(product => (
                 <tr key={product.id} style={{ borderBottom: `1px solid ${colors.light}` }}>
-                  <td style={{ padding: '8px' }}>{product.image ? <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} /> : <DefaultProductImage />}</td>
+                  <td style={{ padding: '8px' }}>{(product.image_url || product.image) ? (<img src={product.image_url || product.image} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />) : (<DefaultProductImage />)}</td>
                   <td style={{ padding: '8px' }}><strong style={{ fontSize: '14px' }}>{product.name}</strong>{product.description && <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.secondary }}>{product.description.substring(0, 40)}...</p>}</td>
                   <td style={{ padding: '8px' }}>{product.category && <span style={{ background: colors.light, padding: '2px 6px', borderRadius: '4px', fontSize: '11px', color: colors.primary, whiteSpace: 'nowrap' }}>{product.category}</span>}</td>
                   <td style={{ padding: '8px', color: colors.secondary, fontSize: '13px' }}>{product.brand || '-'}</td>
@@ -486,7 +517,7 @@ function Products() {
             <button onClick={() => setShowViewModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: '#FEE2E2', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '18px', color: '#EF4444' }}>✕</button>
             <div style={{ display: 'flex', gap: '25px', marginBottom: '25px', flexWrap: 'wrap' }}>
               <div style={{ width: '200px', height: '200px', borderRadius: '12px', overflow: 'hidden', background: colors.gray, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${colors.light}` }}>
-                {viewingProduct.image ? <img src={viewingProduct.image} alt={viewingProduct.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: '64px', opacity: 0.4 }}>📦</div>}
+                {(viewingProduct.image_url || viewingProduct.image) ? (<img src={viewingProduct.image_url || viewingProduct.image} alt={viewingProduct.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />) : (<div style={{ fontSize: '64px', opacity: 0.4 }}>📦</div>)}
               </div>
               <div style={{ flex: 1, minWidth: '200px' }}>
                 <h2 style={{ margin: '0 0 5px', color: colors.primary, fontSize: '22px' }}>{viewingProduct.name}</h2>
