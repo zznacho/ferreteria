@@ -206,49 +206,60 @@ function Layout({ children }) {
         </div>
       </div>
 
-      {/* Contenido Principal */}
-      <div style={{ 
-        flex: 1, 
-        marginLeft: '280px',
-        minHeight: '100vh',
-        background: colors.gray
-      }}>
-{/* Header */}
-<header style={{
-  background: colors.white,
-  padding: '16px 32px',
-  borderBottom: `1px solid ${colors.light}`,
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  flexWrap: 'wrap',
-  gap: '10px'
+{/* Contenido Principal */}
+<div style={{ 
+  flex: 1, 
+  marginLeft: '280px',
+  minHeight: '100vh',
+  background: colors.gray,
+  width: 'calc(100% - 280px)',
+  maxWidth: 'calc(100% - 280px)',
+  overflowX: 'hidden',
+  boxSizing: 'border-box'
 }}>
-  
-  <div style={{
+  {/* Header */}
+  <header style={{
+    background: colors.white,
+    padding: '20px 32px',
+    borderBottom: `1px solid ${colors.light}`,
     display: 'flex',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: '15px'
+    flexWrap: 'wrap',
+    gap: '10px'
   }}>
-    <p style={{ 
-      margin: 0, 
-      color: colors.secondary,
-      fontSize: '14px'
-    }}>
-      {new Date().toLocaleDateString('es-ES', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      })}
-    </p>
+    <div>
+      <h1 style={{ 
+        margin: 0, 
+        fontSize: '26px', 
+        fontWeight: '600',
+        color: colors.primary
+      }}>
+        {location.pathname === '/dashboard' && 'Dashboard'}
+        {location.pathname === '/products' && 'Gestión de Productos'}
+        {location.pathname === '/sales' && 'Historial de Ventas'}
+        {location.pathname === '/sales/new' && 'Nueva Venta'}
+      </h1>
+      <p style={{ 
+        margin: '4px 0 0', 
+        color: colors.secondary,
+        fontSize: '14px'
+      }}>
+        {new Date().toLocaleDateString('es-ES', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })}
+      </p>
+    </div>
     
     <div style={{
-      padding: '6px 14px',
+      padding: '8px 16px',
       background: colors.light,
       borderRadius: '20px',
       color: colors.primary,
-      fontSize: '12px',
+      fontSize: '13px',
       fontWeight: '500',
       display: 'flex',
       alignItems: 'center',
@@ -261,16 +272,20 @@ function Layout({ children }) {
         borderRadius: '50%',
         display: 'inline-block'
       }} />
-      En línea
+      Sistema en línea
     </div>
-  </div>
-</header>
+  </header>
 
-{/* Contenido */}
-<main style={{ padding: '24px' }}>
-  {children}
-</main>
-      </div>
+  {/* Contenido - CORREGIDO */}
+  <main style={{ 
+    padding: '20px',
+    maxWidth: '100%',
+    overflowX: 'hidden',
+    boxSizing: 'border-box'
+  }}>
+    {children}
+  </main>
+</div>
     </div>
   );
 }

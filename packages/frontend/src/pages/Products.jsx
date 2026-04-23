@@ -310,7 +310,7 @@ function Products() {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ maxWidth: '100%', overflowX: 'hidden' }}>
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -608,63 +608,85 @@ function Products() {
         </div>
       )}
 
-      {/* Tabla de productos */}
-      <div style={{ background: 'white', borderRadius: '12px', overflow: 'auto', border: `1px solid ${colors.light}` }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1300px' }}>
-          <thead>
-            <tr style={{ background: colors.primary, color: 'white' }}>
-              <th style={{ padding: '12px', textAlign: 'left' }}></th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Producto</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Categoría</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Marca</th>
-              <th style={{ padding: '12px', textAlign: 'center' }}>Especificaciones</th>
-              <th style={{ padding: '12px', textAlign: 'right' }}>Precio</th>
-              <th style={{ padding: '12px', textAlign: 'right' }}>Stock</th>
-              <th style={{ padding: '12px', textAlign: 'center' }}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProducts.length === 0 ? (
-              <tr>
-                <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
-                  {searchTerm || selectedCategory ? 'No se encontraron productos' : 'No hay productos. ¡Crea uno nuevo!'}
-                </td>
-              </tr>
-            ) : (
-              filteredProducts.map(product => (
-                <tr key={product.id} style={{ borderBottom: `1px solid ${colors.light}` }}>
-                  <td style={{ padding: '10px' }}>
-                    {product.image ? <img src={product.image} alt={product.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px' }} /> : <DefaultProductImage />}
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <strong>{product.name}</strong>
-                    {product.description && <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.secondary }}>{product.description.substring(0, 50)}...</p>}
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    {product.category && <span style={{ background: colors.light, padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: colors.primary }}>{product.category}</span>}
-                  </td>
-                  <td style={{ padding: '12px', color: colors.secondary }}>{product.brand || '-'}</td>
-                  <td style={{ padding: '12px', fontSize: '12px', color: colors.secondary }}>
-                    {product.voltage && <div>⚡ {product.voltage}</div>}
-                    {product.amperage && <div>🔌 {product.amperage}</div>}
-                    {product.wattage && <div>💡 {product.wattage}</div>}
-                    {product.weight && <div>⚖️ {product.weight}</div>}
-                    {product.measure && <div>📏 {product.measure}</div>}
-                  </td>
-                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: '600', color: colors.primary }}>${product.price.toFixed(2)}</td>
-                  <td style={{ padding: '12px', textAlign: 'right' }}>
-                    <span style={{ color: product.stock === 0 ? '#EF4444' : product.stock < 10 ? '#F59E0B' : '#10B981', fontWeight: '600', padding: '4px 8px', borderRadius: '4px', background: product.stock === 0 ? '#FEE2E2' : product.stock < 10 ? '#FEF3C7' : '#D1FAE5' }}>{product.stock}</span>
-                  </td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <button onClick={() => handleEdit(product)} style={{ marginRight: '8px', padding: '6px 12px', background: colors.accent, color: colors.primary, border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>✏️</button>
-                    <button onClick={() => handleDelete(product.id)} style={{ padding: '6px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>🗑️</button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+{/* Tabla de productos */}
+<div style={{
+  background: 'white',
+  borderRadius: '12px',
+  overflowX: 'auto',
+  overflowY: 'visible',
+  border: `1px solid ${colors.light}`,
+  maxWidth: '100%'
+}}>
+  <table style={{ 
+    width: '100%', 
+    borderCollapse: 'collapse', 
+    minWidth: '900px',
+    tableLayout: 'auto'
+  }}>
+    <thead>
+      <tr style={{ background: colors.primary, color: 'white' }}>
+        <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', whiteSpace: 'nowrap' }}></th>
+        <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', whiteSpace: 'nowrap' }}>Producto</th>
+        <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', whiteSpace: 'nowrap' }}>Categoría</th>
+        <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', whiteSpace: 'nowrap' }}>Marca</th>
+        <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '13px', whiteSpace: 'nowrap' }}>Especificaciones</th>
+        <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '13px', whiteSpace: 'nowrap' }}>Precio</th>
+        <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '13px', whiteSpace: 'nowrap' }}>Stock</th>
+        <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '13px', whiteSpace: 'nowrap' }}>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {filteredProducts.length === 0 ? (
+        <tr>
+          <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
+            {searchTerm || selectedCategory ? 'No se encontraron productos' : 'No hay productos. ¡Crea uno nuevo!'}
+          </td>
+        </tr>
+      ) : (
+        filteredProducts.map(product => (
+          <tr key={product.id} style={{ borderBottom: `1px solid ${colors.light}` }}>
+            <td style={{ padding: '8px' }}>
+              {product.image ? <img src={product.image} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} /> : <DefaultProductImage />}
+            </td>
+            <td style={{ padding: '8px' }}>
+              <strong style={{ fontSize: '14px' }}>{product.name}</strong>
+              {product.description && <p style={{ margin: '2px 0 0', fontSize: '11px', color: colors.secondary }}>{product.description.substring(0, 40)}...</p>}
+            </td>
+            <td style={{ padding: '8px' }}>
+              {product.category && <span style={{ background: colors.light, padding: '2px 6px', borderRadius: '4px', fontSize: '11px', color: colors.primary, whiteSpace: 'nowrap' }}>{product.category}</span>}
+            </td>
+            <td style={{ padding: '8px', color: colors.secondary, fontSize: '13px' }}>{product.brand || '-'}</td>
+            <td style={{ padding: '8px', fontSize: '11px', color: colors.secondary }}>
+              {product.voltage && <div style={{ whiteSpace: 'nowrap' }}>⚡ {product.voltage}</div>}
+              {product.amperage && <div style={{ whiteSpace: 'nowrap' }}>🔌 {product.amperage}</div>}
+              {product.wattage && <div style={{ whiteSpace: 'nowrap' }}>💡 {product.wattage}</div>}
+              {product.weight && <div style={{ whiteSpace: 'nowrap' }}>⚖️ {product.weight}</div>}
+              {product.measure && <div style={{ whiteSpace: 'nowrap' }}>📏 {product.measure}</div>}
+            </td>
+            <td style={{ padding: '8px', textAlign: 'right', fontWeight: '600', color: colors.primary, fontSize: '14px', whiteSpace: 'nowrap' }}>
+              ${product.price.toFixed(2)}
+            </td>
+            <td style={{ padding: '8px', textAlign: 'right' }}>
+              <span style={{ 
+                color: product.stock === 0 ? '#EF4444' : product.stock < 10 ? '#F59E0B' : '#10B981', 
+                fontWeight: '600', 
+                padding: '2px 6px', 
+                borderRadius: '4px', 
+                background: product.stock === 0 ? '#FEE2E2' : product.stock < 10 ? '#FEF3C7' : '#D1FAE5',
+                fontSize: '13px',
+                whiteSpace: 'nowrap'
+              }}>{product.stock}</span>
+            </td>
+            <td style={{ padding: '8px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+              <button onClick={() => handleEdit(product)} style={{ marginRight: '6px', padding: '4px 8px', background: colors.accent, color: colors.primary, border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}>✏️</button>
+              <button onClick={() => handleDelete(product.id)} style={{ padding: '4px 8px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>🗑️</button>
+            </td>
+          </tr>
+        ))
+      )}
+    </tbody>
+  </table>
+</div>
 
       {/* Estadísticas */}
       {filteredProducts.length > 0 && (
