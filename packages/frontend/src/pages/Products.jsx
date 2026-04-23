@@ -41,22 +41,22 @@ function Products() {
   // Estados para opciones de selects dinámicos (marcas)
   const [brands, setBrands] = useState([]);
   
-const [formData, setFormData] = useState({
-  name: '',
-  price: '',
-  stock: '',
-  category: '',
-  brand: '',
-  weightValue: '',
-  weightUnit: 'kg',
-  measureValue: '',
-  measureUnit: 'metros',
-  voltage: '',
-  amperage: '',
-  wattage: '',
-  description: '',
-  image: null
-});
+  const [formData, setFormData] = useState({
+    name: '',
+    price: '',
+    stock: '',
+    category: '',
+    brand: '',
+    weightValue: '',
+    weightUnit: 'kg',
+    measureValue: '',
+    measureUnit: 'metros',
+    voltage: '',
+    amperage: '',
+    wattage: '',
+    description: '',
+    image: null
+  });
 
   useEffect(() => {
     loadProducts();
@@ -175,6 +175,8 @@ const [formData, setFormData] = useState({
       weight: weight,
       measure: measure,
       voltage: formData.voltage || null,
+      amperage: formData.amperage || null,
+      wattage: formData.wattage || null,
       description: formData.description || null,
       image: formData.image || null,
       updated_at: new Date().toISOString()
@@ -205,6 +207,8 @@ const [formData, setFormData] = useState({
       measureValue: '', 
       measureUnit: 'metros', 
       voltage: '', 
+      amperage: '', 
+      wattage: '', 
       description: '', 
       image: null 
     });
@@ -250,6 +254,8 @@ const [formData, setFormData] = useState({
       measureValue: measureValue,
       measureUnit: measureUnit,
       voltage: product.voltage || '',
+      amperage: product.amperage || '',
+      wattage: product.wattage || '',
       description: product.description || '',
       image: product.image || null
     });
@@ -326,6 +332,8 @@ const [formData, setFormData] = useState({
               measureValue: '', 
               measureUnit: 'metros', 
               voltage: '', 
+              amperage: '', 
+              wattage: '', 
               description: '', 
               image: null 
             });
@@ -347,214 +355,103 @@ const [formData, setFormData] = useState({
         </button>
       </div>
 
-{/* Filtros */}
-<div style={{
-  background: 'white',
-  padding: '20px',
-  borderRadius: '12px',
-  marginBottom: '20px',
-  border: `1px solid ${colors.light}`
-}}>
-  {/* Primera fila: Búsqueda */}
-  <div style={{ marginBottom: '15px', position: 'relative' }}>
-    <input
-      type="text"
-      placeholder="🔍 Buscar por nombre, marca o descripción..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      style={{
-        width: '100%',
-        padding: '12px 40px 12px 12px',
-        border: `2px solid ${colors.light}`,
-        borderRadius: '8px',
-        fontSize: '14px',
-        outline: 'none',
+      {/* Filtros */}
+      <div style={{
         background: 'white',
-        boxSizing: 'border-box'
-      }}
-      onFocus={(e) => e.target.style.borderColor = colors.accent}
-      onBlur={(e) => e.target.style.borderColor = colors.light}
-    />
-    {searchTerm && (
-      <button
-        onClick={clearSearch}
-        style={{
-          position: 'absolute',
-          right: '10px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          background: 'none',
-          border: 'none',
-          fontSize: '20px',
-          cursor: 'pointer',
-          color: colors.secondary
-        }}
-      >
-        ✕
-      </button>
-    )}
-  </div>
-
-  {/* Segunda fila: Filtro por categoría y ordenamiento */}
-  <div style={{ 
-    display: 'flex', 
-    gap: '15px', 
-    alignItems: 'center',
-    flexWrap: 'wrap'
-  }}>
-    <div style={{ minWidth: '200px', flex: '1' }}>
-      <label style={{ 
-        display: 'block', 
-        marginBottom: '5px', 
-        color: colors.secondary, 
-        fontSize: '12px',
-        fontWeight: '600'
+        padding: '20px',
+        borderRadius: '12px',
+        marginBottom: '20px',
+        border: `1px solid ${colors.light}`
       }}>
-        Filtrar por categoría
-      </label>
-      <select
-        value={selectedCategory}
-        onChange={(e) => setSelectedCategory(e.target.value)}
-        style={{
-          width: '100%',
-          padding: '10px',
-          border: `2px solid ${colors.light}`,
-          borderRadius: '8px',
-          fontSize: '14px',
-          outline: 'none',
-          background: 'white',
-          cursor: 'pointer'
-        }}
-      >
-        <option value="">Todas las categorías</option>
-        {CATEGORIES.map(cat => (
-          <option key={cat} value={cat}>{cat}</option>
-        ))}
-      </select>
-    </div>
-
-    <div style={{ minWidth: '200px', flex: '1' }}>
-      <label style={{ 
-        display: 'block', 
-        marginBottom: '5px', 
-        color: colors.secondary, 
-        fontSize: '12px',
-        fontWeight: '600'
-      }}>
-        Ordenar por
-      </label>
-      <select
-        value={sortBy}
-        onChange={(e) => setSortBy(e.target.value)}
-        style={{
-          width: '100%',
-          padding: '10px',
-          border: `2px solid ${colors.light}`,
-          borderRadius: '8px',
-          fontSize: '14px',
-          outline: 'none',
-          background: 'white',
-          cursor: 'pointer'
-        }}
-      >
-        <option value="name">📝 Nombre (A-Z)</option>
-        <option value="price-asc">💰 Precio (Menor a Mayor)</option>
-        <option value="price-desc">💰 Precio (Mayor a Menor)</option>
-        <option value="stock-asc">📦 Stock (Menor a Mayor)</option>
-        <option value="stock-desc">📦 Stock (Mayor a Menor)</option>
-      </select>
-    </div>
-  </div>
-
-  {/* Chips de filtros activos y resultados */}
-  {(searchTerm || selectedCategory) && (
-    <div style={{ 
-      marginTop: '15px', 
-      paddingTop: '15px',
-      borderTop: `1px solid ${colors.light}`,
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '12px', 
-      flexWrap: 'wrap' 
-    }}>
-      <span style={{ color: colors.secondary, fontSize: '13px' }}>
-        Filtros activos:
-      </span>
-      
-      {selectedCategory && (
-        <span style={{
-          background: colors.accent,
-          color: colors.primary,
-          padding: '6px 12px',
-          borderRadius: '20px',
-          fontSize: '13px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontWeight: '500'
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 200px auto', 
+          gap: '15px',
+          alignItems: 'center'
         }}>
-          📂 {selectedCategory}
-          <button
-            onClick={clearCategoryFilter}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: colors.primary,
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              fontSize: '16px',
-              padding: '0 4px'
-            }}
+          <div style={{ position: 'relative' }}>
+            <input
+              type="text"
+              placeholder="🔍 Buscar por nombre, marca o descripción..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                ...inputStyle,
+                padding: '12px 40px 12px 12px'
+              }}
+              onFocus={(e) => e.target.style.borderColor = colors.accent}
+              onBlur={(e) => e.target.style.borderColor = colors.light}
+            />
+            {searchTerm && (
+              <button
+                onClick={clearSearch}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  color: colors.secondary
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            style={selectStyle}
           >
-            ✕
-          </button>
-        </span>
-      )}
-      
-      {searchTerm && (
-        <span style={{
-          background: colors.light,
-          color: colors.primary,
-          padding: '6px 12px',
-          borderRadius: '20px',
-          fontSize: '13px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontWeight: '500'
-        }}>
-          🔍 "{searchTerm}"
-          <button
-            onClick={clearSearch}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: colors.primary,
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              fontSize: '16px',
-              padding: '0 4px'
-            }}
+            <option value="">Todas las categorías</option>
+            {CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{ ...selectStyle, width: '200px' }}
           >
-            ✕
-          </button>
-        </span>
-      )}
-      
-      <span style={{ 
-        marginLeft: 'auto', 
-        color: colors.primary, 
-        fontSize: '13px',
-        fontWeight: '600',
-        background: colors.gray,
-        padding: '6px 12px',
-        borderRadius: '20px'
-      }}>
-        {filteredProducts.length} producto(s) encontrado(s)
-      </span>
-    </div>
-  )}
-</div>
+            <option value="name">📝 Nombre (A-Z)</option>
+            <option value="price-asc">💰 Precio (Menor a Mayor)</option>
+            <option value="price-desc">💰 Precio (Mayor a Menor)</option>
+            <option value="stock-asc">📦 Stock (Menor a Mayor)</option>
+            <option value="stock-desc">📦 Stock (Mayor a Menor)</option>
+          </select>
+        </div>
+
+        {(searchTerm || selectedCategory) && (
+          <div style={{ marginTop: '15px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ color: colors.secondary, fontSize: '13px' }}>Filtros activos:</span>
+            {selectedCategory && (
+              <span style={{
+                background: colors.accent,
+                color: colors.primary,
+                padding: '6px 12px',
+                borderRadius: '20px',
+                fontSize: '13px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                Categoría: {selectedCategory}
+                <button onClick={clearCategoryFilter} style={{ background: 'none', border: 'none', color: colors.primary, cursor: 'pointer', fontWeight: 'bold', fontSize: '16px' }}>✕</button>
+              </span>
+            )}
+            <span style={{ color: colors.secondary, fontSize: '13px' }}>
+              <strong>{filteredProducts.length}</strong> producto(s)
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Formulario */}
       {showForm && (
         <div style={{
           background: 'white',
@@ -573,261 +470,95 @@ const [formData, setFormData] = useState({
               {/* Columna 1 */}
               <div>
                 <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Nombre *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    style={inputStyle}
-                    onFocus={(e) => e.target.style.borderColor = colors.accent}
-                    onBlur={(e) => e.target.style.borderColor = colors.light}
-                    required
-                  />
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Nombre *</label>
+                  <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={inputStyle} onFocus={(e) => e.target.style.borderColor = colors.accent} onBlur={(e) => e.target.style.borderColor = colors.light} required />
                 </div>
                 
                 <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Categoría
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    style={selectStyle}
-                  >
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Categoría</label>
+                  <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} style={selectStyle}>
                     <option value="">Seleccionar categoría</option>
-                    {CATEGORIES.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
+                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                   </select>
                 </div>
                 
                 <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Marca
-                  </label>
-                  <input
-                    type="text"
-                    list="brands-list"
-                    value={formData.brand}
-                    onChange={(e) => setFormData({...formData, brand: e.target.value})}
-                    style={inputStyle}
-                    onFocus={(e) => e.target.style.borderColor = colors.accent}
-                    onBlur={(e) => e.target.style.borderColor = colors.light}
-                  />
-                  <datalist id="brands-list">
-                    {brands.map((brand, i) => (
-                      <option key={i} value={brand} />
-                    ))}
-                  </datalist>
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Marca</label>
+                  <input type="text" list="brands-list" value={formData.brand} onChange={(e) => setFormData({...formData, brand: e.target.value})} style={inputStyle} onFocus={(e) => e.target.style.borderColor = colors.accent} onBlur={(e) => e.target.style.borderColor = colors.light} />
+                  <datalist id="brands-list">{brands.map((brand, i) => <option key={i} value={brand} />)}</datalist>
                 </div>
                 
                 <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Peso
-                  </label>
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Peso</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="text"
-                      placeholder="Valor"
-                      value={formData.weightValue}
-                      onChange={(e) => setFormData({...formData, weightValue: e.target.value})}
-                      style={{ ...inputStyle, width: '60%' }}
-                      onFocus={(e) => e.target.style.borderColor = colors.accent}
-                      onBlur={(e) => e.target.style.borderColor = colors.light}
-                    />
-                    <select
-                      value={formData.weightUnit}
-                      onChange={(e) => setFormData({...formData, weightUnit: e.target.value})}
-                      style={{ ...selectStyle, width: '40%' }}
-                    >
-                      {WEIGHT_UNITS.map(unit => (
-                        <option key={unit} value={unit}>{unit}</option>
-                      ))}
+                    <input type="text" placeholder="Valor" value={formData.weightValue} onChange={(e) => setFormData({...formData, weightValue: e.target.value})} style={{ ...inputStyle, width: '60%' }} />
+                    <select value={formData.weightUnit} onChange={(e) => setFormData({...formData, weightUnit: e.target.value})} style={{ ...selectStyle, width: '40%' }}>
+                      {WEIGHT_UNITS.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                     </select>
                   </div>
                 </div>
 
-                                <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Descripción
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    style={{
-                      ...inputStyle,
-                      resize: 'vertical',
-                      minHeight: '80px'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = colors.accent}
-                    onBlur={(e) => e.target.style.borderColor = colors.light}
-                  />
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Voltaje</label>
+                  <select value={formData.voltage} onChange={(e) => setFormData({...formData, voltage: e.target.value})} style={selectStyle}>
+                    <option value="">Seleccionar voltaje</option>
+                    {VOLTAGE_OPTIONS.map(volt => <option key={volt} value={volt}>{volt}</option>)}
+                  </select>
                 </div>
-
               </div>
 
               {/* Columna 2 */}
               <div>
                 <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Precio *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    style={inputStyle}
-                    onFocus={(e) => e.target.style.borderColor = colors.accent}
-                    onBlur={(e) => e.target.style.borderColor = colors.light}
-                    required
-                  />
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Precio *</label>
+                  <input type="number" step="0.01" min="0" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} style={inputStyle} required />
                 </div>
                 
                 <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Stock *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.stock}
-                    onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                    style={inputStyle}
-                    onFocus={(e) => e.target.style.borderColor = colors.accent}
-                    onBlur={(e) => e.target.style.borderColor = colors.light}
-                    required
-                  />
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Stock *</label>
+                  <input type="number" min="0" value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})} style={inputStyle} required />
                 </div>
                 
                 <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                    Medida
-                  </label>
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Medida</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="text"
-                      placeholder="Valor"
-                      value={formData.measureValue}
-                      onChange={(e) => setFormData({...formData, measureValue: e.target.value})}
-                      style={{ ...inputStyle, width: '60%' }}
-                      onFocus={(e) => e.target.style.borderColor = colors.accent}
-                      onBlur={(e) => e.target.style.borderColor = colors.light}
-                    />
-                    <select
-                      value={formData.measureUnit}
-                      onChange={(e) => setFormData({...formData, measureUnit: e.target.value})}
-                      style={{ ...selectStyle, width: '40%' }}
-                    >
-                      {MEASURE_UNITS.map(unit => (
-                        <option key={unit} value={unit}>{unit}</option>
-                      ))}
+                    <input type="text" placeholder="Valor" value={formData.measureValue} onChange={(e) => setFormData({...formData, measureValue: e.target.value})} style={{ ...inputStyle, width: '60%' }} />
+                    <select value={formData.measureUnit} onChange={(e) => setFormData({...formData, measureUnit: e.target.value})} style={{ ...selectStyle, width: '40%' }}>
+                      {MEASURE_UNITS.map(unit => <option key={unit} value={unit}>{unit}</option>)}
                     </select>
                   </div>
                 </div>
-                
+
                 <div style={{ marginBottom: '15px' }}>
-  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-    Voltaje
-  </label>
-  <select
-    value={formData.voltage}
-    onChange={(e) => setFormData({...formData, voltage: e.target.value})}
-    style={selectStyle}
-  >
-    <option value="">Seleccionar voltaje</option>
-    {VOLTAGE_OPTIONS.map(volt => (
-      <option key={volt} value={volt}>{volt}</option>
-    ))}
-  </select>
-</div>
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Amperaje</label>
+                  <select value={formData.amperage} onChange={(e) => setFormData({...formData, amperage: e.target.value})} style={selectStyle}>
+                    <option value="">Seleccionar amperaje</option>
+                    {AMPERAGE_OPTIONS.map(amp => <option key={amp} value={amp}>{amp}</option>)}
+                  </select>
+                </div>
 
-<div style={{ marginBottom: '15px' }}>
-  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-    Amperaje
-  </label>
-  <select
-    value={formData.amperage}
-    onChange={(e) => setFormData({...formData, amperage: e.target.value})}
-    style={selectStyle}
-  >
-    <option value="">Seleccionar amperaje</option>
-    {AMPERAGE_OPTIONS.map(amp => (
-      <option key={amp} value={amp}>{amp}</option>
-    ))}
-  </select>
-</div>
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Potencia (Watts)</label>
+                  <select value={formData.wattage} onChange={(e) => setFormData({...formData, wattage: e.target.value})} style={selectStyle}>
+                    <option value="">Seleccionar potencia</option>
+                    {WATTAGE_OPTIONS.map(watt => <option key={watt} value={watt}>{watt}</option>)}
+                  </select>
+                </div>
 
-<div style={{ marginBottom: '15px' }}>
-  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-    Potencia (Watts)
-  </label>
-  <select
-    value={formData.wattage}
-    onChange={(e) => setFormData({...formData, wattage: e.target.value})}
-    style={selectStyle}
-  >
-    <option value="">Seleccionar potencia</option>
-    {WATTAGE_OPTIONS.map(watt => (
-      <option key={watt} value={watt}>{watt}</option>
-    ))}
-  </select>
-</div>
-                
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Descripción</label>
+                  <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} style={{ ...inputStyle, resize: 'vertical', minHeight: '80px' }} />
+                </div>
               </div>
 
               {/* Columna 3 - Imagen */}
               <div>
-                <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>
-                  Imagen
-                </label>
-                
-                <div style={{
-                  width: '100%',
-                  height: '200px',
-                  border: `2px dashed ${colors.light}`,
-                  borderRadius: '8px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  background: colors.gray
-                }}>
+                <label style={{ display: 'block', marginBottom: '5px', color: colors.primary, fontWeight: '600' }}>Imagen</label>
+                <div style={{ width: '100%', height: '200px', border: `2px dashed ${colors.light}`, borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', background: colors.gray }}>
                   {imagePreview ? (
                     <>
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview" 
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover'
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        style={{
-                          position: 'absolute',
-                          top: '5px',
-                          right: '5px',
-                          background: '#EF4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '30px',
-                          height: '30px',
-                          cursor: 'pointer',
-                          fontSize: '16px'
-                        }}
-                      >
-                        ✕
-                      </button>
+                      <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <button type="button" onClick={handleRemoveImage} style={{ position: 'absolute', top: '5px', right: '5px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', fontSize: '16px' }}>✕</button>
                     </>
                   ) : (
                     <>
@@ -836,74 +567,29 @@ const [formData, setFormData] = useState({
                     </>
                   )}
                 </div>
-                
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  style={{ marginTop: '10px', width: '100%' }}
-                />
-                <small style={{ color: colors.secondary, display: 'block', marginTop: '5px' }}>
-                  Máx 5MB (Opcional)
-                </small>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ marginTop: '10px', width: '100%' }} />
+                <small style={{ color: colors.secondary, display: 'block', marginTop: '5px' }}>Máx 5MB (Opcional)</small>
               </div>
             </div>
             
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button
-                type="submit"
-                style={{
-                  padding: '12px 24px',
-                  background: colors.primary,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  fontWeight: '600'
-                }}
-              >
-                {editingProduct ? 'Actualizar' : 'Crear'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingProduct(null);
-                  setImagePreview(null);
-                }}
-                style={{
-                  padding: '12px 24px',
-                  background: colors.secondary,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '16px'
-                }}
-              >
-                Cancelar
-              </button>
+              <button type="submit" style={{ padding: '12px 24px', background: colors.primary, color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', fontWeight: '600' }}>{editingProduct ? 'Actualizar' : 'Crear'}</button>
+              <button type="button" onClick={() => { setShowForm(false); setEditingProduct(null); setImagePreview(null); }} style={{ padding: '12px 24px', background: colors.secondary, color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>Cancelar</button>
             </div>
           </form>
         </div>
       )}
 
       {/* Tabla de productos */}
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        overflow: 'auto',
-        border: `1px solid ${colors.light}`
-      }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px' }}>
+      <div style={{ background: 'white', borderRadius: '12px', overflow: 'auto', border: `1px solid ${colors.light}` }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1300px' }}>
           <thead>
             <tr style={{ background: colors.primary, color: 'white' }}>
               <th style={{ padding: '12px', textAlign: 'left' }}></th>
               <th style={{ padding: '12px', textAlign: 'left' }}>Producto</th>
               <th style={{ padding: '12px', textAlign: 'left' }}>Categoría</th>
               <th style={{ padding: '12px', textAlign: 'left' }}>Marca</th>
+              <th style={{ padding: '12px', textAlign: 'center' }}>Especificaciones</th>
               <th style={{ padding: '12px', textAlign: 'right' }}>Precio</th>
               <th style={{ padding: '12px', textAlign: 'right' }}>Stock</th>
               <th style={{ padding: '12px', textAlign: 'center' }}>Acciones</th>
@@ -912,63 +598,38 @@ const [formData, setFormData] = useState({
           <tbody>
             {filteredProducts.length === 0 ? (
               <tr>
-                <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
-                  {searchTerm || selectedCategory ? 'No se encontraron productos con los filtros aplicados' : 'No hay productos. ¡Crea uno nuevo!'}
+                <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: colors.secondary }}>
+                  {searchTerm || selectedCategory ? 'No se encontraron productos' : 'No hay productos. ¡Crea uno nuevo!'}
                 </td>
               </tr>
             ) : (
               filteredProducts.map(product => (
                 <tr key={product.id} style={{ borderBottom: `1px solid ${colors.light}` }}>
                   <td style={{ padding: '10px' }}>
-                    {product.image ? (
-                      <img src={product.image} alt={product.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px' }} />
-                    ) : (
-                      <DefaultProductImage />
-                    )}
+                    {product.image ? <img src={product.image} alt={product.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px' }} /> : <DefaultProductImage />}
                   </td>
                   <td style={{ padding: '12px' }}>
                     <strong>{product.name}</strong>
-                    {product.description && (
-                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.secondary }}>
-                        {product.description.substring(0, 50)}...
-                      </p>
-                    )}
+                    {product.description && <p style={{ margin: '4px 0 0', fontSize: '12px', color: colors.secondary }}>{product.description.substring(0, 50)}...</p>}
                   </td>
-                  <td style={{ padding: '12px', color: colors.secondary }}>
-                    {product.category ? (
-                      <span style={{
-                        background: colors.light,
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        color: colors.primary
-                      }}>
-                        {product.category}
-                      </span>
-                    ) : '-'}
+                  <td style={{ padding: '12px' }}>
+                    {product.category && <span style={{ background: colors.light, padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: colors.primary }}>{product.category}</span>}
                   </td>
                   <td style={{ padding: '12px', color: colors.secondary }}>{product.brand || '-'}</td>
-                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: '600', color: colors.primary }}>
-                    ${product.price.toFixed(2)}
+                  <td style={{ padding: '12px', fontSize: '12px', color: colors.secondary }}>
+                    {product.voltage && <div>⚡ {product.voltage}</div>}
+                    {product.amperage && <div>🔌 {product.amperage}</div>}
+                    {product.wattage && <div>💡 {product.wattage}</div>}
+                    {product.weight && <div>⚖️ {product.weight}</div>}
+                    {product.measure && <div>📏 {product.measure}</div>}
                   </td>
+                  <td style={{ padding: '12px', textAlign: 'right', fontWeight: '600', color: colors.primary }}>${product.price.toFixed(2)}</td>
                   <td style={{ padding: '12px', textAlign: 'right' }}>
-                    <span style={{
-                      color: product.stock === 0 ? '#EF4444' : product.stock < 10 ? '#F59E0B' : '#10B981',
-                      fontWeight: '600',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      background: product.stock === 0 ? '#FEE2E2' : product.stock < 10 ? '#FEF3C7' : '#D1FAE5'
-                    }}>
-                      {product.stock}
-                    </span>
+                    <span style={{ color: product.stock === 0 ? '#EF4444' : product.stock < 10 ? '#F59E0B' : '#10B981', fontWeight: '600', padding: '4px 8px', borderRadius: '4px', background: product.stock === 0 ? '#FEE2E2' : product.stock < 10 ? '#FEF3C7' : '#D1FAE5' }}>{product.stock}</span>
                   </td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <button onClick={() => handleEdit(product)} style={{ marginRight: '8px', padding: '6px 12px', background: colors.accent, color: colors.primary, border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
-                      ✏️
-                    </button>
-                    <button onClick={() => handleDelete(product.id)} style={{ padding: '6px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
-                      🗑️
-                    </button>
+                    <button onClick={() => handleEdit(product)} style={{ marginRight: '8px', padding: '6px 12px', background: colors.accent, color: colors.primary, border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>✏️</button>
+                    <button onClick={() => handleDelete(product.id)} style={{ padding: '6px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>🗑️</button>
                   </td>
                 </tr>
               ))
@@ -979,31 +640,10 @@ const [formData, setFormData] = useState({
 
       {/* Estadísticas */}
       {filteredProducts.length > 0 && (
-        <div style={{
-          marginTop: '20px',
-          padding: '15px 20px',
-          background: 'white',
-          borderRadius: '12px',
-          display: 'flex',
-          gap: '30px',
-          border: `1px solid ${colors.light}`
-        }}>
-          <div>
-            <span style={{ color: colors.secondary }}>Total productos: </span>
-            <strong style={{ color: colors.primary }}>{filteredProducts.length}</strong>
-          </div>
-          <div>
-            <span style={{ color: colors.secondary }}>Valor del inventario: </span>
-            <strong style={{ color: colors.primary }}>
-              ${filteredProducts.reduce((sum, p) => sum + (p.price * p.stock), 0).toFixed(2)}
-            </strong>
-          </div>
-          <div>
-            <span style={{ color: colors.secondary }}>Categorías: </span>
-            <strong style={{ color: colors.primary }}>
-              {[...new Set(filteredProducts.map(p => p.category).filter(Boolean))].length}
-            </strong>
-          </div>
+        <div style={{ marginTop: '20px', padding: '15px 20px', background: 'white', borderRadius: '12px', display: 'flex', gap: '30px', border: `1px solid ${colors.light}` }}>
+          <div><span style={{ color: colors.secondary }}>Total productos: </span><strong style={{ color: colors.primary }}>{filteredProducts.length}</strong></div>
+          <div><span style={{ color: colors.secondary }}>Valor inventario: </span><strong style={{ color: colors.primary }}>${filteredProducts.reduce((sum, p) => sum + (p.price * p.stock), 0).toFixed(2)}</strong></div>
+          <div><span style={{ color: colors.secondary }}>Categorías: </span><strong style={{ color: colors.primary }}>{[...new Set(filteredProducts.map(p => p.category).filter(Boolean))].length}</strong></div>
         </div>
       )}
     </div>
