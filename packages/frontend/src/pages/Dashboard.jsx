@@ -22,31 +22,27 @@ function Dashboard() {
       let products = [];
       let sales = [];
       
-      if (prodRes.ok) products = await prodRes.json();
-      else products = JSON.parse(localStorage.getItem('products') || '[]');
+      if (prodRes.ok) {
+        products = await prodRes.json();
+        products = products.map(p => ({ ...p, price: Number(p.price), stock: Number(p.stock) }));
+      }
       
-      if (salesRes.ok) sales = await salesRes.json();
-      else sales = JSON.parse(localStorage.getItem('sales') || '[]');
+      if (salesRes.ok) {
+        sales = await salesRes.json();
+        sales = sales.map(s => ({ ...s, total_amount: Number(s.total_amount || 0), total_items: Number(s.total_items || 0) }));
+      }
       
-      const totalSales = sales.reduce((sum, s) => sum + (s.total_amount || s.total || 0), 0);
+      const totalSales = sales.reduce((sum, s) => sum + s.total_amount, 0);
       const lowStock = products.filter(p => p.stock < 10).length;
       const recentSales = sales.slice(-5).reverse();
       
       setStats({ products: products.length, sales: sales.length, totalSales, lowStock, recentSales });
     } catch (error) {
-      const products = JSON.parse(localStorage.getItem('products') || '[]');
-      const sales = JSON.parse(localStorage.getItem('sales') || '[]');
-      setStats({
-        products: products.length,
-        sales: sales.length,
-        totalSales: sales.reduce((sum, s) => sum + (s.total || 0), 0),
-        lowStock: products.filter(p => p.stock < 10).length,
-        recentSales: sales.slice(-5).reverse()
-      });
+      console.error('Error cargando stats:', error);
     }
   };
 
-  const StatCard = ({ title, value, icon, color }) => (
+  const StatCard = ({ title, value, icon }) => (
     <div style={{ background: colors.white, padding: '24px', borderRadius: '16px', border: `1px solid ${colors.light}` }}>
       <p style={{ margin: '0 0 8px', color: colors.secondary, fontSize: '13px', fontWeight: '600', textTransform: 'uppercase' }}>{title}</p>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -78,10 +74,10 @@ function Dashboard() {
                 <div>
                   <p style={{ margin: 0, fontWeight: '600', color: colors.primary }}>Venta #{String(sale.id).slice(-8)}</p>
                   <p style={{ margin: '4px 0 0', fontSize: '13px', color: colors.secondary }}>
-                    {new Date(sale.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })} • {sale.total_items || sale.items?.length || 0} productos
+                    {new Date(sale.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })} • {sale.total_items || 0} productos
                   </p>
                 </div>
-                <p style={{ margin: 0, fontWeight: '700', color: '#10B981', fontSize: '18px' }}>${(sale.total_amount || sale.total || 0).toLocaleString('es-ES', {minimumFractionDigits: 2})}</p>
+                <p style={{ margin: 0, fontWeight: '700', color: '#10B981', fontSize: '18px' }}>${sale.total_amount.toLocaleString('es-ES', {minimumFractionDigits: 2})}</p>
               </div>
             ))
           )}
