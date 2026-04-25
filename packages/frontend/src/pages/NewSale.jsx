@@ -167,7 +167,7 @@ const ProductImage = ({ product }) => {
               style={{ width: '100%', padding: '10px 14px', border: `2px solid ${colors.light}`, borderRadius: '10px', marginBottom: '15px', fontSize: '14px', outline: 'none', background: 'white', boxSizing: 'border-box' }}
               onFocus={(e) => e.target.style.borderColor = colors.accent} onBlur={(e) => e.target.style.borderColor = colors.light} />
 
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto',borderRadius: '12px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '650px' }}>
                 <thead>
                   <tr style={{ background: colors.primary, color: 'white' }}>
